@@ -1,7 +1,5 @@
 #include "image.h"
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #define TO_FIXED_POINT(x) ((x) << 8)
 #define FROM_FIXED_POINT(x) ((x) >> 8)

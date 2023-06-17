@@ -6,8 +6,8 @@ DUDE_PORT = usb
 
 TARGET=main
 
-AVR_OBJS=epd.avr.o image.sdl.o $(TARGET).avr.o
-SDL_OBJS=sdl.sdl.o image.sdl.o
+AVR_OBJS=epd.avr.o image.avr.o art.avr.o $(TARGET).avr.o
+SDL_OBJS=sdl.sdl.o image.sdl.o art.sdl.o
 
 OPTIMIZE = Os
 CC = avr-gcc
