@@ -5,7 +5,9 @@ DUDE_PROGRAMMER = usbasp
 DUDE_PORT = usb
 
 TARGET=main
-OBJS=epd.o $(TARGET).o
+
+AVR_OBJS=epd.avr.o image.sdl.o $(TARGET).avr.o
+SDL_OBJS=sdl.sdl.o image.sdl.o
 
 OPTIMIZE = Os
 CC = avr-gcc
@@ -31,14 +33,19 @@ CFLAGS += -I/usr/avr/include
 CFLAGS += -Wstrict-prototypes
 CFLAGS += -DF_CPU=$(F_CPU)
 
+SDL_CFLAGS = -std=gnu99 -Wall
+
 ESC = \033[
 DEBUG = $(ESC)34;40;1m
 PROGRAM = $(ESC)33;40;1m
 STOP = $(ESC)0m
 
-all: $(OBJS)
+sdl: $(SDL_OBJS)
+	gcc $(SDL_CFLAGS) -o sdl $(SDL_OBJS) -lSDL2
+
+all: $(AVR_OBJS)
 	@echo -e " $(DEBUG)>>> Creating TARGET...$(STOP)"
-	$(CC) $(CFLAGS) -Wl,-Map,$(TARGET).map -o $(TARGET).elf $(OBJS)
+	$(CC) $(CFLAGS) -Wl,-Map,$(TARGET).map -o $(TARGET).elf $(AVR_OBJS)
 	@echo -e " $(DEBUG)>>> Creating HEX...$(STOP)"
 	$(OBJCOPY) -j .text -j .data -O ihex $(TARGET).elf $(TARGET).hex
 	@echo -e "  $(DEBUG)>>> Size dump:$(STOP)"
@@ -47,9 +54,11 @@ all: $(OBJS)
 clean:
 	@echo -e "$(DEBUG)>>> Removing the rubbish...$(STOP)"
 	rm -f *.o *.hex *.elf *.map *.lst
-	rm -f $(TARGET)
 
-%.o: %.c
+%.sdl.o: %.c
+	gcc $(SDL_CFLAGS) -c -o $@ $<
+
+%.avr.o: %.c
 	@echo -e " $(DEBUG)>>> Creating $@ file...$(STOP)"
 	$(CC) $(CFLAGS) -c -o $@ $<
 

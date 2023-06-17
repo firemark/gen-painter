@@ -30,10 +30,10 @@ SDL_Surface *draw(struct Image *image) {
         *pixel = 0xFFFFFFFF;
         break;
       case BLACK:
-        *pixel = 0x000000FF;
+        *pixel = 0xFF000000;
         break;
       case RED:
-        *pixel = 0xFF0000FF;
+        *pixel = 0xFFFF0000;
         break;
       default:
         *pixel = 0x00000000;
@@ -45,15 +45,19 @@ SDL_Surface *draw(struct Image *image) {
 
 void core(SDL_Surface *screen_surface) {
   struct Image image = {.x_offset = 0, .y_offset = 0};
-  struct Line lines[4] = {
-      {.color = BLACK, .x0 = 0, .y0 = 0, .x1 = 128, .y1 = 128},
+  struct Line lines[] = {
+      {.color = RED,
+       .x0 = 0 + 30,
+       .y0 = 128 + 30,
+       .x1 = 256 + 30,
+       .y1 = 0 + 30},
+      {.color = BLACK, .x1 = 0, .y1 = 0, .x0 = 128, .y0 = 128},
       {.color = RED, .x0 = 64, .y0 = 0, .x1 = 64, .y1 = 128},
       {.color = BLACK, .x0 = 0, .y0 = 64, .x1 = 128, .y1 = 64},
-      {.color = RED, .x0 = 0, .y0 = 128, .x1 = 128, .y1 = 0},
   };
 
-  for (uint8_t y = 0; y < 3; y++) {
-    for (uint8_t x = 0; x < 3; x++) {
+  for (uint8_t y = 0; y < 4; y++) {
+    for (uint8_t x = 0; x < 4; x++) {
       fill_image(&image, lines, 4);
 
       SDL_Rect rect = {.x = image.x_offset * 4,
