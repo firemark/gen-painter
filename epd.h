@@ -82,6 +82,10 @@ void EPD_12in48B_data2M2(uint8_t data);
 void EPD_12in48B_data2M1(uint8_t data);
 void EPD_12in48B_data2S1(uint8_t data);
 
+void EPD_12in48B_partialS2(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+
+void EPD_12in48B_refreshS2(void);
+
 void EPD_12in48B_TurnOnDisplay(void);
 void EPD_12in48B_Sleep(void);
 

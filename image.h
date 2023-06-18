@@ -1,8 +1,8 @@
 #pragma once
 #include <stdint.h>
 
-#define IMAGE_WIDTH 64
-#define IMAGE_HEIGHT 64
+#define IMAGE_WIDTH 48
+#define IMAGE_HEIGHT 48
 #define IMAGE_SIZE (IMAGE_HEIGHT * (IMAGE_WIDTH >> 2))
 
 enum Color { WHITE = 0b00, BLACK = 0b01, RED = 0b10 };
