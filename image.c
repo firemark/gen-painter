@@ -1,8 +1,8 @@
 #include "image.h"
 #include <stdint.h>
 
-#define TO_FIXED_POINT(x) ((x) << 8)
-#define FROM_FIXED_POINT(x) ((x) >> 8)
+#define TO_FIXED_POINT(x) ((x) << 16)
+#define FROM_FIXED_POINT(x) ((x) >> 16)
 
 #define ABORT_IF_OUTSIDE(start, end, length)                                   \
   {                                                                            \
@@ -28,14 +28,14 @@
   }
 
 void image_clear(struct Image *image) {
-  for (uint16_t i = 0; i < IMAGE_SIZE; i++) {
+  for (uint32_t i = 0; i < IMAGE_SIZE; i++) {
     image->buffer[i] = 0;
   }
 }
 
 static inline void _image_set_pixel(struct Image *image, enum Color color,
-                                    uint8_t x, uint8_t y) {
-  uint16_t index = (x >> 2) * IMAGE_WIDTH + y;
+                                    uint16_t x, uint16_t y) {
+  uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);
   if (index >= IMAGE_SIZE) {
     return;
   }
@@ -57,34 +57,34 @@ static inline void _image_set_pixel(struct Image *image, enum Color color,
 }
 
 static inline void _image_draw_xline(struct Image *image, enum Color color,
-                                     uint8_t y, uint8_t x0, uint8_t x1) {
-  for (uint8_t x = x0; x <= x1; x++) {
+                                     uint16_t y, uint16_t x0, uint16_t x1) {
+  for (uint16_t x = x0; x <= x1; x++) {
     _image_set_pixel(image, color, x, y);
   }
 }
 
 static inline void _image_draw_yline(struct Image *image, enum Color color,
-                                     uint8_t x, uint8_t y0, uint8_t y1) {
-  for (uint8_t y = y0; y <= y1; y++) {
+                                     uint16_t x, uint16_t y0, uint16_t y1) {
+  for (uint16_t y = y0; y <= y1; y++) {
     _image_set_pixel(image, color, x, y);
   }
 }
 
 static inline void _image_draw_line_low(struct Image *image, enum Color color,
-                                        uint8_t x0, uint8_t x1, uint8_t y0,
-                                        uint8_t y1) {
+                                        uint16_t x0, uint16_t x1, uint16_t y0,
+                                        uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
   int16_t dx = x1 - x0;
   int16_t dy = y1 - y0;
 
-  uint8_t yi = 1;
+  int16_t yi = 1;
   if (dy < 0) {
     yi = -1;
     dy = -dy;
   }
 
   int16_t d = 2 * dy - dx;
-  for (uint8_t x = x0, y = y0; x <= x1; x++) {
+  for (uint16_t x = x0, y = y0; x <= x1; x++) {
     _image_set_pixel(image, color, x, y);
     if (d > 0) {
       y += yi;
@@ -95,20 +95,20 @@ static inline void _image_draw_line_low(struct Image *image, enum Color color,
 }
 
 static inline void _image_draw_line_high(struct Image *image, enum Color color,
-                                         uint8_t x0, uint8_t x1, uint8_t y0,
-                                         uint8_t y1) {
+                                         uint16_t x0, uint16_t x1, uint16_t y0,
+                                         uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
   int16_t dy = y1 - y0;
   int16_t dx = x1 - x0;
 
-  uint8_t xi = 1;
+  int16_t xi = 1;
   if (dx < 0) {
     xi = -1;
     dx = -dx;
   }
 
   int16_t d = 2 * dx - dy;
-  for (uint8_t y = y0, x = x0; y <= y1; y++) {
+  for (uint16_t y = y0, x = x0; y <= y1; y++) {
     _image_set_pixel(image, color, x, y);
     if (d > 0) {
       x += xi;
@@ -119,8 +119,8 @@ static inline void _image_draw_line_high(struct Image *image, enum Color color,
 }
 
 static inline void _image_draw_line(struct Image *image, enum Color color,
-                                    uint8_t x0, uint8_t x1, uint8_t y0,
-                                    uint8_t y1) {
+                                    uint16_t x0, uint16_t x1, uint16_t y0,
+                                    uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
   uint8_t abs_dy = y1 > y0 ? y1 - y0 : y0 - y1;
   uint8_t abs_dx = x1 > x0 ? x1 - x0 : x0 - x1;

@@ -33,7 +33,7 @@ CFLAGS += -I/usr/avr/include
 CFLAGS += -Wstrict-prototypes
 CFLAGS += -DF_CPU=$(F_CPU)
 
-SDL_CFLAGS = -std=gnu99 -Wall
+SDL_CFLAGS = -std=gnu99 -Wall -g
 
 ESC = \033[
 DEBUG = $(ESC)34;40;1m

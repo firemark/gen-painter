@@ -6,15 +6,15 @@
 
 #include "art.h"
 
-#define SCREEN_WIDTH 960
-#define SCREEN_HEIGHT 960
+#define SCREEN_WIDTH 1304
+#define SCREEN_HEIGHT 984
 
 
-SDL_Surface *draw(struct Image *image) {
+SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
   SDL_Surface *surface =
-      SDL_CreateRGBSurface(0, IMAGE_WIDTH, IMAGE_HEIGHT, 32, 0, 0, 0, 0);
-  for (uint8_t y = 0; y < IMAGE_HEIGHT; y++)
-    for (uint8_t x = 0; x < IMAGE_WIDTH; x++) {
+      SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
+  for (uint16_t y = 0; y < h; y++)
+    for (uint16_t x = 0; x < w; x++) {
       enum Color color = image_get(image, x, y);
       uint32_t *pixel =
           (uint32_t *)((uint8_t *)surface->pixels + y * surface->pitch +
@@ -42,21 +42,24 @@ void core(SDL_Surface *screen_surface) {
 
   art_make();
 
-  for (uint8_t y = 0; y < 4; y++) {
-    for (uint8_t x = 0; x < 4; x++) {
+  uint16_t W[2] = {648, 656};
+  uint16_t H[2] = {492, 492};
+
+  for (uint8_t y = 0; y < 2; y++) {
+    for (uint8_t x = 0; x < 2; x++) {
       art_draw(&image);
 
-      SDL_Rect rect = {.x = image.x_offset * 4,
-                       .y = image.y_offset * 4,
-                       .w = IMAGE_WIDTH * 4,
-                       .h = IMAGE_HEIGHT * 4};
+      SDL_Rect rect = {.x = image.x_offset,
+                       .y = image.y_offset,
+                       .w = W[x],
+                       .h = H[y]};
 
-      SDL_Surface *surface = draw(&image);
-      SDL_BlitScaled(surface, NULL, screen_surface, &rect);
+      SDL_Surface *surface = draw(&image, W[x], H[y]);
+      SDL_BlitSurface(surface, NULL, screen_surface, &rect);
       SDL_FreeSurface(surface);
-      image.x_offset += IMAGE_WIDTH;
+      image.x_offset += W[x];
     }
-    image.y_offset += IMAGE_HEIGHT;
+    image.y_offset += H[y];
     image.x_offset = 0;
   }
 }

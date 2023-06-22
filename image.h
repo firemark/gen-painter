@@ -1,8 +1,8 @@
 #pragma once
 #include <stdint.h>
 
-#define IMAGE_WIDTH 48
-#define IMAGE_HEIGHT 48
+#define IMAGE_WIDTH 656
+#define IMAGE_HEIGHT 492
 #define IMAGE_SIZE (IMAGE_HEIGHT * (IMAGE_WIDTH >> 2))
 
 enum Color { WHITE = 0b00, BLACK = 0b01, RED = 0b10 };
@@ -23,8 +23,8 @@ struct Image {
 
 void image_clear(struct Image *image);
 void image_draw_line(struct Image *image, struct Line *line);
-static inline enum Color image_get(struct Image *image, uint8_t x, uint8_t y) {
-  uint16_t index = (x >> 2) * IMAGE_WIDTH + y;
+static inline enum Color image_get(struct Image *image, uint16_t x, uint16_t y) {
+  uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);
   uint8_t byte = image->buffer[index];
   switch (x & 0b11) {
   case 0:
