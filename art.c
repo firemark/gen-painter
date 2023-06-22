@@ -1,7 +1,7 @@
 #include "art.h"
 
 static uint8_t _lines_count;
-static struct Line _lines[8];
+static struct Line _lines[16];
 
 void art_make(void) {
   _lines_count = 16;
