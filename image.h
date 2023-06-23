@@ -9,6 +9,7 @@ enum Color { WHITE = 0b00, BLACK = 0b01, RED = 0b10 };
 
 struct Line {
   enum Color color;
+  uint8_t thickness;
   int16_t x0;
   int16_t y0;
   int16_t x1;
@@ -23,7 +24,8 @@ struct Image {
 
 void image_clear(struct Image *image);
 void image_draw_line(struct Image *image, struct Line *line);
-static inline enum Color image_get(struct Image *image, uint16_t x, uint16_t y) {
+static inline enum Color image_get(struct Image *image, uint16_t x,
+                                   uint16_t y) {
   uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);
   uint8_t byte = image->buffer[index];
   switch (x & 0b11) {

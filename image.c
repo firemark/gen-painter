@@ -57,22 +57,36 @@ static inline void _image_set_pixel(struct Image *image, enum Color color,
 }
 
 static inline void _image_draw_xline(struct Image *image, enum Color color,
-                                     uint16_t y, uint16_t x0, uint16_t x1) {
-  for (uint16_t x = x0; x <= x1; x++) {
-    _image_set_pixel(image, color, x, y);
+                                     uint8_t thickness, uint16_t y, uint16_t x0,
+                                     uint16_t x1) {
+  uint16_t thickness_half = thickness / 2;
+  uint16_t y0 = y > thickness_half ? y - thickness_half : 0;
+  uint16_t y1 = y + thickness_half;
+  y1 = y1 < (IMAGE_HEIGHT - 1) ? y1 : IMAGE_HEIGHT - 1;
+  for (uint16_t yn = y0; yn <= y1; yn++) {
+    for (uint16_t xn = x0; xn <= x1; xn++) {
+      _image_set_pixel(image, color, xn, yn);
+    }
   }
 }
 
 static inline void _image_draw_yline(struct Image *image, enum Color color,
-                                     uint16_t x, uint16_t y0, uint16_t y1) {
-  for (uint16_t y = y0; y <= y1; y++) {
-    _image_set_pixel(image, color, x, y);
+                                     uint8_t thickness, uint16_t x, uint16_t y0,
+                                     uint16_t y1) {
+  uint16_t thickness_half = thickness / 2;
+  uint16_t x0 = x > thickness_half ? x - thickness_half : 0;
+  uint16_t x1 = x + thickness_half;
+  x1 = x1 < (IMAGE_WIDTH - 1) ? x1 : IMAGE_WIDTH - 1;
+  for (uint16_t xn = x0; xn <= x1; xn++) {
+    for (uint16_t yn = y0; yn <= y1; yn++) {
+      _image_set_pixel(image, color, xn, yn);
+    }
   }
 }
 
 static inline void _image_draw_line_low(struct Image *image, enum Color color,
-                                        uint16_t x0, uint16_t x1, uint16_t y0,
-                                        uint16_t y1) {
+                                        uint8_t thickness, uint16_t x0,
+                                        uint16_t x1, uint16_t y0, uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
   int16_t dx = x1 - x0;
   int16_t dy = y1 - y0;
@@ -95,7 +109,8 @@ static inline void _image_draw_line_low(struct Image *image, enum Color color,
 }
 
 static inline void _image_draw_line_high(struct Image *image, enum Color color,
-                                         uint16_t x0, uint16_t x1, uint16_t y0,
+                                         uint8_t thickness, uint16_t x0,
+                                         uint16_t x1, uint16_t y0,
                                          uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
   int16_t dy = y1 - y0;
@@ -119,22 +134,22 @@ static inline void _image_draw_line_high(struct Image *image, enum Color color,
 }
 
 static inline void _image_draw_line(struct Image *image, enum Color color,
-                                    uint16_t x0, uint16_t x1, uint16_t y0,
-                                    uint16_t y1) {
+                                    uint8_t thickness, uint16_t x0, uint16_t x1,
+                                    uint16_t y0, uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
   uint8_t abs_dy = y1 > y0 ? y1 - y0 : y0 - y1;
   uint8_t abs_dx = x1 > x0 ? x1 - x0 : x0 - x1;
   if (abs_dy < abs_dx) {
     if (x0 > x1) {
-      _image_draw_line_low(image, color, x1, x0, y1, y0);
+      _image_draw_line_low(image, thickness, color, x1, x0, y1, y0);
     } else {
-      _image_draw_line_low(image, color, x0, x1, y0, y1);
+      _image_draw_line_low(image, thickness, color, x0, x1, y0, y1);
     }
   } else {
     if (y0 > y1) {
-      _image_draw_line_high(image, color, x1, x0, y1, y0);
+      _image_draw_line_high(image, thickness, color, x1, x0, y1, y0);
     } else {
-      _image_draw_line_high(image, color, x0, x1, y0, y1);
+      _image_draw_line_high(image, thickness, color, x0, x1, y0, y1);
     }
   }
 }
@@ -156,19 +171,19 @@ void image_draw_line(struct Image *image, struct Line *line) {
     ABORT_IF_OUTSIDE(x0, x0, IMAGE_WIDTH - 1);
     if (dy > 0) { // y1 > y0
       CLIP(y0, y1, IMAGE_HEIGHT - 1);
-      _image_draw_yline(image, line->color, x0, y0, y1);
+      _image_draw_yline(image, line->color, line->thickness, x0, y0, y1);
     } else { // y0 > y1
       CLIP(y1, y0, IMAGE_HEIGHT - 1);
-      _image_draw_yline(image, line->color, x0, y1, y0);
+      _image_draw_yline(image, line->color, line->thickness, x0, y1, y0);
     }
   } else if (dy == 0) {
     ABORT_IF_OUTSIDE(y0, y0, IMAGE_WIDTH - 1);
     if (dx > 0) { // x1 > x0
       CLIP(x0, x1, IMAGE_WIDTH - 1);
-      _image_draw_xline(image, line->color, y0, x0, x1);
+      _image_draw_xline(image, line->color, line->thickness, y0, x0, x1);
     } else { // x0 > x1
       CLIP(x1, x0, IMAGE_WIDTH - 1);
-      _image_draw_xline(image, line->color, y0, x1, x0);
+      _image_draw_xline(image, line->color, line->thickness, y0, x1, x0);
     }
   } else {
     // https://en.wikipedia.org/wiki/Liang–Barsky_algorithm
@@ -217,6 +232,6 @@ void image_draw_line(struct Image *image, struct Line *line) {
     //        u_max / 256.0, u_min / 256.0, xn0, yn0, xn1, yn1, dx, dy,
     //        image->x_offset, image->y_offset);
 
-    _image_draw_line(image, line->color, xn0, xn1, yn0, yn1);
+    _image_draw_line(image, line->thickness, line->color, xn0, xn1, yn0, yn1);
   }
 }
