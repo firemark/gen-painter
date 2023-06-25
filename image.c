@@ -337,9 +337,9 @@ void image_draw_circle(struct Image *image, struct Circle *circle) {
 void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap, enum Color color, int16_t x, int16_t y)
 {
   int16_t x0 = x - BITMAP_WIDTH / 2 - image->x_offset;
-  int16_t x1 = x + BITMAP_WIDTH / 2 - image->x_offset;
+  int16_t x1 = x0 + BITMAP_WIDTH - 1;
   int16_t y0 = y - BITMAP_HEIGHT / 2 - image->y_offset;
-  int16_t y1 = y + BITMAP_HEIGHT / 2 - 1 - image->y_offset;
+  int16_t y1 = y0 + BITMAP_HEIGHT - 1;
 
   CLIP_FINAL(x0, IMAGE_WIDTH - 1);
   CLIP_FINAL(x1, IMAGE_WIDTH - 1);
