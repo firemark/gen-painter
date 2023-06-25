@@ -1,5 +1,4 @@
 #include "image.h"
-#include "eink-esp32/image.h"
 #include <stdint.h>
 
 #define TO_FIXED_POINT(x) ((x) << 16)
