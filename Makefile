@@ -41,7 +41,7 @@ PROGRAM = $(ESC)33;40;1m
 STOP = $(ESC)0m
 
 sdl: $(SDL_OBJS)
-	gcc $(SDL_CFLAGS) -o sdl $(SDL_OBJS) -lSDL2
+	gcc $(SDL_CFLAGS) -o sdl $(SDL_OBJS) -lSDL2 -lm
 
 all: $(AVR_OBJS)
 	@echo -e " $(DEBUG)>>> Creating TARGET...$(STOP)"
@@ -56,7 +56,7 @@ clean:
 	rm -f *.o *.hex *.elf *.map *.lst
 
 %.sdl.o: %.c
-	gcc $(SDL_CFLAGS) -c -o $@ $<
+	gcc  $(SDL_CFLAGS) -c -o $@ $<
 
 %.avr.o: %.c
 	@echo -e " $(DEBUG)>>> Creating $@ file...$(STOP)"

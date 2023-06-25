@@ -4,3 +4,6 @@
 
 void art_make(void);
 void art_draw(struct Image *image);
+
+// This functions should be implemented in main!
+uint32_t art_random();

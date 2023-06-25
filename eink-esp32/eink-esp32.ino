@@ -15,6 +15,10 @@ static void draw_M1(struct Image *image);
 static void draw_S2(struct Image *image);
 static void draw_M2(struct Image *image);
 
+uint32_t art_random() {
+  return esp_random();
+}
+
 void setup() {
   DEV_ModuleInit();
 
@@ -30,7 +34,7 @@ void setup() {
   draw_to_screen();
 
   EPD_12in48B_TurnOnDisplay();
-  DEV_Delay_ms(2000);
+  DEV_Delay_ms(10000);
 
   // clear for Long-term preservation
   printf("clear... \r\n");

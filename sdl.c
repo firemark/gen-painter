@@ -1,13 +1,20 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <time.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_surface.h>
-#include <stdint.h>
-#include <stdio.h>
 
 #include "art.h"
 
 #define SCREEN_WIDTH 1304
 #define SCREEN_HEIGHT 984
+
+
+uint32_t art_random() {
+  return rand();
+}
 
 SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
   SDL_Surface *surface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
@@ -65,6 +72,7 @@ void core(SDL_Surface *screen_surface) {
 }
 
 int main(int argc, char *args[]) {
+  srand(time(NULL));
   SDL_Window *window = NULL;
   SDL_Surface *screenSurface = NULL;
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
