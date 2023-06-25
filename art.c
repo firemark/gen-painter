@@ -3,15 +3,41 @@
 #include "image.h"
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #define LINES_SIZE 1024
+#define CIRCLE_SIZE (1024 * 3)
 
 static uint16_t _lines_count;
+static uint16_t _circles_count;
 static uint16_t _rain_density;
 static struct Line _lines[LINES_SIZE];
+static struct Circle _circles[CIRCLE_SIZE];
+
+static void _leaf(uint16_t x, uint16_t y, uint16_t size) {
+  if (_circles_count >= CIRCLE_SIZE) {
+    return;
+  }
+
+  _circles[_circles_count++] = (struct Circle){
+      .color = RED,
+      .d = size,
+      .x = x,
+      .y = y,
+  };
+}
 
 static void _tree(uint8_t n, uint16_t x, uint16_t y, uint16_t w, float rot) {
+  if (n < 3 && (art_random() % 100) > n * 8) {
+    uint16_t dx = 16 - (art_random() % 32);
+    uint16_t dy = 16 - (art_random() % 32);
+    _leaf(x + dx, y + dy, w / 10 + (art_random() % 5));
+    dx = 16 - (art_random() % 32);
+    dy = 16 - (art_random() % 32);
+    _leaf(x + dx, y + dy, w / 10 + (art_random() % 5));
+  }
+
   if (n == 0 || _lines_count >= LINES_SIZE) {
     return;
   }
@@ -44,16 +70,16 @@ static void _tree(uint8_t n, uint16_t x, uint16_t y, uint16_t w, float rot) {
 }
 
 static void _rain(struct Image *image) {
-  for(uint16_t i = 0; i < _rain_density; i++) {
+  for (uint16_t i = 0; i < _rain_density; i++) {
     uint16_t x = image->x_offset + art_random() % IMAGE_WIDTH;
     uint16_t y = image->y_offset + (art_random() % IMAGE_HEIGHT) - 12;
     struct Line line = {
-      .color = RED,
-      .thickness = 1,
-      .x0 = x,
-      .y0 = y,
-      .x1 = x,
-      .y1 = y + 12,
+        .color = RED,
+        .thickness = 1,
+        .x0 = x,
+        .y0 = y,
+        .x1 = x,
+        .y1 = y + 12,
     };
     image_draw_line(image, &line);
   }
@@ -70,6 +96,7 @@ void art_make(void) {
   _rain_density = art_random() % 512;
 
   printf("total lines: %d\n", _lines_count);
+  printf("total circles: %d\n", _circles_count);
 }
 
 void art_draw(struct Image *image) {
@@ -77,5 +104,8 @@ void art_draw(struct Image *image) {
   _rain(image);
   for (uint16_t i = 0; i < _lines_count; i++) {
     image_draw_line(image, &_lines[i]);
+  }
+  for (uint16_t i = 0; i < _circles_count; i++) {
+    image_draw_circle(image, &_circles[i]);
   }
 }

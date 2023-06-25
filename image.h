@@ -19,6 +19,13 @@ struct Line {
   int16_t y1;
 };
 
+struct Circle {
+  enum Color color;
+  uint8_t d;
+  int16_t x;
+  int16_t y;
+};
+
 struct Image {
   int16_t x_offset;
   int16_t y_offset;
@@ -27,6 +34,7 @@ struct Image {
 
 void image_clear(struct Image *image);
 void image_draw_line(struct Image *image, struct Line *line);
+void image_draw_circle(struct Image *image, struct Circle *circle);
 static inline enum Color image_get(struct Image *image, uint16_t x,
                                    uint16_t y) {
   uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);

@@ -1,4 +1,5 @@
 #include "image.h"
+#include "eink-esp32/image.h"
 #include <stdint.h>
 
 #define TO_FIXED_POINT(x) ((x) << 16)
@@ -22,8 +23,8 @@
   {                                                                            \
     if (x < 0) {                                                               \
       x = 0;                                                                   \
-    } else if (x > length) {                                                   \
-      x = length;                                                              \
+    } else if (x > (length)) {                                                 \
+      x = (length);                                                            \
     }                                                                          \
   }
 
@@ -291,5 +292,43 @@ void image_draw_line(struct Image *image, struct Line *line) {
     //        image->x_offset, image->y_offset);
 
     _image_draw_line(image, line->color, line->thickness, xn0, xn1, yn0, yn1);
+  }
+}
+
+void image_draw_circle(struct Image *image, struct Circle *circle) {
+  int16_t t1 = circle->d / 16, t2;
+  int16_t x0 = circle->x - image->x_offset;
+  int16_t y0 = circle->y - image->y_offset;
+
+  int16_t x = circle->d;
+  int16_t y = 0;
+  while (x >= y) {
+    int16_t x_min = x0 - x;
+    int16_t x_max = x0 + x;
+    int16_t y_min = x0 - y;
+    int16_t y_max = x0 + y;
+
+    CLIP_FINAL(x_min, IMAGE_WIDTH - 1);
+    CLIP_FINAL(x_max, IMAGE_WIDTH - 1);
+    CLIP_FINAL(y_min, IMAGE_WIDTH - 1);
+    CLIP_FINAL(y_max, IMAGE_WIDTH - 1);
+
+    if (x_max > x_min) {
+      _image_draw_xline(image, circle->color, 1, y0 + y, x_min, x_max);
+      _image_draw_xline(image, circle->color, 1, y0 - y, x_min, x_max);
+    }
+
+    if (y_max > y_min) {
+      _image_draw_xline(image, circle->color, 1, y0 + x, y_min, y_max);
+      _image_draw_xline(image, circle->color, 1, y0 - x, y_min, y_max);
+    }
+
+    y++;
+    t1 = t1 + y;
+    t2 = t1 - x;
+    if (t2 >= 0) {
+      t1 = t2;
+      x--;
+    }
   }
 }
