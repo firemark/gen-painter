@@ -1,5 +1,4 @@
 #include "art.h"
-#include "eink-esp32/image.h"
 #include "image.h"
 
 #include <math.h>
