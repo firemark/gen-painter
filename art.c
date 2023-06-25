@@ -1,5 +1,4 @@
 #include "art.h"
-#include "eink-esp32/image.h"
 #include "image.h"
 
 #include <math.h>
@@ -9,6 +8,27 @@
 
 #define LINES_SIZE 1024
 #define CIRCLES_SIZE 1024
+
+static struct Bitmap EXAMPLE = {{
+  // clang-format off
+  0b11111111, 0b11111111,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b10000000, 0b00000001,
+  0b11111111, 0b11111111,
+  // clang-format on
+}};
 
 static uint16_t _lines_count;
 static uint16_t _circles_count;
@@ -127,7 +147,8 @@ static void _rain(struct Image *image) {
         .x1 = x,
         .y1 = y + 12,
     };
-    image_draw_line(image, &line);
+    //image_draw_line(image, &line);
+    image_paste_bitmap(image, &EXAMPLE, _leaves_color, x, y);
   }
 }
 

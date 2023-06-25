@@ -8,6 +8,10 @@
 #define FULL_IMAGE_WIDTH 1304
 #define FULL_IMAGE_HEIGHT 984
 
+#define BITMAP_WIDTH 16
+#define BITMAP_HEIGHT 16
+#define BITMAP_SIZE (BITMAP_HEIGHT * (BITMAP_WIDTH >> 3))
+
 enum Color { WHITE = 0b00, BLACK = 0b01, RED = 0b10 };
 
 struct Line {
@@ -32,9 +36,16 @@ struct Image {
   uint8_t buffer[IMAGE_SIZE];
 };
 
+struct Bitmap {
+  uint8_t buffer[BITMAP_SIZE];
+};
+
 void image_clear(struct Image *image, enum Color color);
 void image_draw_line(struct Image *image, struct Line *line);
 void image_draw_circle(struct Image *image, struct Circle *circle);
+void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,
+                        enum Color color, int16_t x, int16_t y);
+
 static inline enum Color image_get(struct Image *image, uint16_t x,
                                    uint16_t y) {
   uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);

@@ -1,4 +1,5 @@
 #include "image.h"
+#include "eink-esp32/image.h"
 #include <stdint.h>
 
 #define TO_FIXED_POINT(x) ((x) << 16)
@@ -329,6 +330,31 @@ void image_draw_circle(struct Image *image, struct Circle *circle) {
     if (t2 >= 0) {
       t1 = t2;
       x--;
+    }
+  }
+}
+
+void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap, enum Color color, int16_t x, int16_t y)
+{
+  int16_t x0 = x - BITMAP_WIDTH / 2 - image->x_offset;
+  int16_t x1 = x + BITMAP_WIDTH / 2 - image->x_offset;
+  int16_t y0 = y - BITMAP_HEIGHT / 2 - image->y_offset;
+  int16_t y1 = y + BITMAP_HEIGHT / 2 - 1 - image->y_offset;
+
+  CLIP_FINAL(x0, IMAGE_WIDTH - 1);
+  CLIP_FINAL(x1, IMAGE_WIDTH - 1);
+  CLIP_FINAL(y0, IMAGE_HEIGHT - 1);
+  CLIP_FINAL(y1, IMAGE_HEIGHT - 1);
+
+  uint8_t w = x1 - x0;
+  uint8_t h = y1 - y0;
+
+  for (uint16_t by = 0; by <= h; by++) {
+    for (uint16_t bx = 0; bx <= w; bx++) {
+      uint16_t index = by * (BITMAP_WIDTH >> 3) + (bx >> 3);
+      if ((bitmap->buffer[index] << (bx & 0b111)) & 0b10000000) {
+        _image_set_pixel(image, color, x0 + bx, y0 + by);
+      }
     }
   }
 }
