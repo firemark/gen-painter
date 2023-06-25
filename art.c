@@ -4,18 +4,19 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define LINES_SIZE 1024
-#define CIRCLE_SIZE (1024 * 3)
+#define CIRCLES_SIZE (1024 * 2)
 
 static uint16_t _lines_count;
 static uint16_t _circles_count;
 static uint16_t _rain_density;
-static struct Line _lines[LINES_SIZE];
-static struct Circle _circles[CIRCLE_SIZE];
+static struct Line *_lines;
+static struct Circle *_circles;
 
 static void _leaf(uint16_t x, uint16_t y, uint16_t size) {
-  if (_circles_count >= CIRCLE_SIZE) {
+  if (_circles_count >= CIRCLES_SIZE) {
     return;
   }
 
@@ -29,12 +30,7 @@ static void _leaf(uint16_t x, uint16_t y, uint16_t size) {
 
 static void _tree(uint8_t n, uint16_t x, uint16_t y, uint16_t w, float rot) {
   if (n < 3 && (art_random() % 100) > n * 8) {
-    uint16_t dx = 16 - (art_random() % 32);
-    uint16_t dy = 16 - (art_random() % 32);
-    _leaf(x + dx, y + dy, w / 10 + (art_random() % 5));
-    dx = 16 - (art_random() % 32);
-    dy = 16 - (art_random() % 32);
-    _leaf(x + dx, y + dy, w / 10 + (art_random() % 5));
+    _leaf(x, y, w / 20 + (art_random() % 5));
   }
 
   if (n == 0 || _lines_count >= LINES_SIZE) {
@@ -69,8 +65,8 @@ static void _tree(uint8_t n, uint16_t x, uint16_t y, uint16_t w, float rot) {
 }
 
 static void _grid(struct Image *image) {
-  for(uint16_t y=0; y < IMAGE_HEIGHT; y+=4) {
-    for(uint16_t x=0; x < IMAGE_WIDTH; x+=4) {
+  for (uint16_t y = 0; y < IMAGE_HEIGHT; y += 4) {
+    for (uint16_t x = 0; x < IMAGE_WIDTH; x += 4) {
       uint16_t xx = image->x_offset + x;
       uint16_t yy = image->y_offset + y;
       struct Line line = {
@@ -102,6 +98,11 @@ static void _rain(struct Image *image) {
   }
 }
 
+void art_init(void) {
+  _lines = malloc(sizeof(struct Line) * LINES_SIZE);
+  _circles = malloc(sizeof(struct Circle) * CIRCLES_SIZE);
+}
+
 void art_make(void) {
   _lines_count = 0;
   uint16_t x = FULL_IMAGE_WIDTH / 2;
@@ -124,6 +125,13 @@ void art_draw(struct Image *image) {
     image_draw_line(image, &_lines[i]);
   }
   for (uint16_t i = 0; i < _circles_count; i++) {
-    image_draw_circle(image, &_circles[i]);
+    for (uint16_t j = 0; j < 5; j++) {
+      uint16_t dx = 16 - (art_random() % 32);
+      uint16_t dy = 16 - (art_random() % 32);
+      struct Circle circle = _circles[i];
+      circle.x += dx;
+      circle.y += dy;
+      image_draw_circle(image, &circle);
+    }
   }
 }

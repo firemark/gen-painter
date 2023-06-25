@@ -30,6 +30,7 @@ void setup() {
   EPD_12in48B_Clear();
   printf("NewImage \r\n");
 
+  art_init();
   art_make();
   draw_to_screen();
 
