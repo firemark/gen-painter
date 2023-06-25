@@ -26,13 +26,13 @@ SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
                        x * surface->format->BytesPerPixel);
       switch (color) {
       case WHITE:
-        *pixel = 0xFFFFFFFF;
+        *pixel = 0xFFD9DAD2;
         break;
       case BLACK:
-        *pixel = 0xFF000000;
+        *pixel = 0xFF2D383A;
         break;
       case RED:
-        *pixel = 0xFFFF0000;
+        *pixel = 0xFFB94E48;
         break;
       default:
         *pixel = 0x00000000;
@@ -113,6 +113,11 @@ int main(int argc, char *args[]) {
         quit = 1;
       } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q) {
         quit = 1;
+      } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r) {
+
+        core(screenSurface);
+        SDL_UpdateWindowSurface(window);
+
       }
     }
   }
