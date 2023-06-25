@@ -48,7 +48,7 @@ static void _tree(uint8_t n, uint16_t x, uint16_t y, uint16_t w, float rot) {
 
   uint16_t nx = x + w * sin(rot);
   uint16_t ny = y - w * cos(rot);
-  float rw = (20 - (int8_t)(art_random() % 40)) / 320.0;
+  float rw = (20 - (int8_t)(art_random() % 40)) / 160.0;
   uint16_t nw = w * 3 / 4 + rw;
 
   _lines[_lines_count++] = (struct Line){
@@ -60,13 +60,31 @@ static void _tree(uint8_t n, uint16_t x, uint16_t y, uint16_t w, float rot) {
       .y1 = ny,
   };
 
-  float r0 = (20 - (int8_t)(art_random() % 40)) / 320.0;
-  float r1 = (20 - (int8_t)(art_random() % 40)) / 160.0;
-  float r2 = (20 - (int8_t)(art_random() % 40)) / 160.0;
+  float r0 = (20 - (int8_t)(art_random() % 40)) / 160.0;
+  float r1 = (20 - (int8_t)(art_random() % 40)) / 80.0;
+  float r2 = (20 - (int8_t)(art_random() % 40)) / 80.0;
 
   _tree(n - 1, nx, ny, nw * 1.1, rot + r0);
   _tree(n - 1, nx, ny, nw, rot + r1 + 0.5);
   _tree(n - 1, nx, ny, nw, rot + r2 - 0.5);
+}
+
+static void _grid(struct Image *image) {
+  for(uint16_t y=0; y < IMAGE_HEIGHT; y+=4) {
+    for(uint16_t x=0; x < IMAGE_WIDTH; x+=4) {
+      uint16_t xx = image->x_offset + x;
+      uint16_t yy = image->y_offset + y;
+      struct Line line = {
+          .color = BLACK,
+          .thickness = 1,
+          .x0 = xx,
+          .y0 = yy,
+          .x1 = xx,
+          .y1 = yy,
+      };
+      image_draw_line(image, &line);
+    }
+  }
 }
 
 static void _rain(struct Image *image) {
@@ -101,6 +119,7 @@ void art_make(void) {
 
 void art_draw(struct Image *image) {
   image_clear(image);
+  _grid(image);
   _rain(image);
   for (uint16_t i = 0; i < _lines_count; i++) {
     image_draw_line(image, &_lines[i]);
