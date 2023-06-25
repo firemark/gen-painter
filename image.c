@@ -35,10 +35,10 @@ void image_clear(struct Image *image) {
 
 static inline void _image_set_pixel(struct Image *image, enum Color color,
                                     uint16_t x, uint16_t y) {
-  uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);
-  if (index >= IMAGE_SIZE) {
+  if (x >= IMAGE_WIDTH || y >= IMAGE_HEIGHT) {
     return;
   }
+  uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);
   uint8_t *byte = &image->buffer[index];
   switch (x & 0b11) {
   case 0:
@@ -84,6 +84,40 @@ static inline void _image_draw_yline(struct Image *image, enum Color color,
   }
 }
 
+static inline void _image_draw_line_low_simple(struct Image *image,
+                                               enum Color color, uint16_t y,
+                                               uint16_t x0, uint16_t x1,
+                                               int16_t i, int16_t dx,
+                                               int16_t dy) {
+  int16_t d = 2 * dy - dx;
+  for (uint16_t x = x0; x <= x1; x++) {
+    _image_set_pixel(image, color, x, y);
+    if (d > 0) {
+      y += i;
+      d += 2 * (dy - dx);
+    } else {
+      d += 2 * dy;
+    }
+  }
+}
+
+static inline void _image_draw_line_high_simple(struct Image *image,
+                                                enum Color color, uint16_t x,
+                                                uint16_t y0, uint16_t y1,
+                                                int16_t i, int16_t dx,
+                                                int16_t dy) {
+  int16_t d = 2 * dx - dy;
+  for (uint16_t y = y0; y <= y1; y++) {
+    _image_set_pixel(image, color, x, y);
+    if (d > 0) {
+      x += i;
+      d += 2 * (dx - dy);
+    } else {
+      d += 2 * dx;
+    }
+  }
+}
+
 static inline void _image_draw_line_low(struct Image *image, enum Color color,
                                         uint8_t thickness, uint16_t x0,
                                         uint16_t x1, uint16_t y0, uint16_t y1) {
@@ -91,20 +125,32 @@ static inline void _image_draw_line_low(struct Image *image, enum Color color,
   int16_t dx = x1 - x0;
   int16_t dy = y1 - y0;
 
-  int16_t yi = 1;
+  int16_t i = 1;
   if (dy < 0) {
-    yi = -1;
+    i = -1;
     dy = -dy;
   }
 
-  int16_t d = 2 * dy - dx;
-  for (uint16_t x = x0, y = y0; x <= x1; x++) {
-    _image_set_pixel(image, color, x, y);
-    if (d > 0) {
-      y += yi;
-      d -= 2 * dx;
+  uint16_t half = thickness / 2;
+  int16_t nd = 2 * dy - dx;
+
+  for (int16_t t = -half, nx0 = x0, nx1 = x1; t <= half; t++) {
+    _image_draw_line_low_simple(image, color, y0 + t, nx0, nx1, i, dx, dy);
+    // TODO resolve problem with edges
+
+    if (nd < 0) {
+      _image_draw_line_low_simple(image, color, y0 + t + 1, nx0, nx1, i, dx,
+                                  dy);
+      if (nx0 > 0) {
+        nx0 -= i;
+      }
+      if (nx1 > 0) {
+        nx1 -= i;
+      }
+      nd += 2 * dx;
+    } else {
+      nd += 2 * (dy - dx);
     }
-    d += 2 * dy;
   }
 }
 
@@ -116,20 +162,32 @@ static inline void _image_draw_line_high(struct Image *image, enum Color color,
   int16_t dy = y1 - y0;
   int16_t dx = x1 - x0;
 
-  int16_t xi = 1;
+  int16_t i = 1;
   if (dx < 0) {
-    xi = -1;
+    i = -1;
     dx = -dx;
   }
 
-  int16_t d = 2 * dx - dy;
-  for (uint16_t y = y0, x = x0; y <= y1; y++) {
-    _image_set_pixel(image, color, x, y);
-    if (d > 0) {
-      x += xi;
-      d -= 2 * dy;
+  uint16_t half = thickness / 2;
+  int16_t nd = 2 * dx - dy;
+
+  for (int16_t t = -half, ny0 = y0, ny1 = y1; t <= half; t++) {
+    _image_draw_line_high_simple(image, color, x0 + t, ny0, ny1, i, dx, dy);
+    // TODO resolve problem with edges
+
+    if (nd < 0) {
+      _image_draw_line_high_simple(image, color, x0 + 1 + t, ny0, ny1, i, dx,
+                                   dy);
+      if (ny0 > 0) {
+        ny0 -= i;
+      }
+      if (ny1 > 0) {
+        ny1 -= i;
+      }
+      nd += 2 * dy;
+    } else {
+      nd += 2 * (dx - dy);
     }
-    d += 2 * dx;
   }
 }
 
@@ -137,19 +195,19 @@ static inline void _image_draw_line(struct Image *image, enum Color color,
                                     uint8_t thickness, uint16_t x0, uint16_t x1,
                                     uint16_t y0, uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-  uint8_t abs_dy = y1 > y0 ? y1 - y0 : y0 - y1;
-  uint8_t abs_dx = x1 > x0 ? x1 - x0 : x0 - x1;
+  uint16_t abs_dy = y1 > y0 ? y1 - y0 : y0 - y1;
+  uint16_t abs_dx = x1 > x0 ? x1 - x0 : x0 - x1;
   if (abs_dy < abs_dx) {
     if (x0 > x1) {
-      _image_draw_line_low(image, thickness, color, x1, x0, y1, y0);
+      _image_draw_line_low(image, color, thickness, x1, x0, y1, y0);
     } else {
-      _image_draw_line_low(image, thickness, color, x0, x1, y0, y1);
+      _image_draw_line_low(image, color, thickness, x0, x1, y0, y1);
     }
   } else {
     if (y0 > y1) {
-      _image_draw_line_high(image, thickness, color, x1, x0, y1, y0);
+      _image_draw_line_high(image, color, thickness, x1, x0, y1, y0);
     } else {
-      _image_draw_line_high(image, thickness, color, x0, x1, y0, y1);
+      _image_draw_line_high(image, color, thickness, x0, x1, y0, y1);
     }
   }
 }
@@ -232,6 +290,6 @@ void image_draw_line(struct Image *image, struct Line *line) {
     //        u_max / 256.0, u_min / 256.0, xn0, yn0, xn1, yn1, dx, dy,
     //        image->x_offset, image->y_offset);
 
-    _image_draw_line(image, line->thickness, line->color, xn0, xn1, yn0, yn1);
+    _image_draw_line(image, line->color, line->thickness, xn0, xn1, yn0, yn1);
   }
 }

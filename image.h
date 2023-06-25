@@ -5,6 +5,9 @@
 #define IMAGE_HEIGHT 492
 #define IMAGE_SIZE (IMAGE_HEIGHT * (IMAGE_WIDTH >> 2))
 
+#define FULL_IMAGE_WIDTH 1304
+#define FULL_IMAGE_HEIGHT 984
+
 enum Color { WHITE = 0b00, BLACK = 0b01, RED = 0b10 };
 
 struct Line {

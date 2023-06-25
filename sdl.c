@@ -9,10 +9,8 @@
 #define SCREEN_WIDTH 1304
 #define SCREEN_HEIGHT 984
 
-
 SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
-  SDL_Surface *surface =
-      SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
+  SDL_Surface *surface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
   for (uint16_t y = 0; y < h; y++)
     for (uint16_t x = 0; x < w; x++) {
       enum Color color = image_get(image, x, y);
@@ -49,13 +47,15 @@ void core(SDL_Surface *screen_surface) {
     for (uint8_t x = 0; x < 2; x++) {
       art_draw(&image);
 
-      SDL_Rect rect = {.x = image.x_offset,
-                       .y = image.y_offset,
-                       .w = W[x],
-                       .h = H[y]};
+      SDL_Rect dstrect = {
+          .x = image.x_offset,
+          .y = image.y_offset,
+          .w = W[x],
+          .h = H[y],
+      };
 
       SDL_Surface *surface = draw(&image, W[x], H[y]);
-      SDL_BlitSurface(surface, NULL, screen_surface, &rect);
+      SDL_BlitSurface(surface, NULL, screen_surface, &dstrect);
       SDL_FreeSurface(surface);
       image.x_offset += W[x];
     }
