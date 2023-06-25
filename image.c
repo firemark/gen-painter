@@ -27,9 +27,10 @@
     }                                                                          \
   }
 
-void image_clear(struct Image *image) {
+void image_clear(struct Image *image, enum Color color) {
+  uint8_t byte = color | (color << 2) | (color << 4) | (color << 6);
   for (uint32_t i = 0; i < IMAGE_SIZE; i++) {
-    image->buffer[i] = 0;
+    image->buffer[i] = byte;
   }
 }
 

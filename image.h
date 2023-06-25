@@ -32,7 +32,7 @@ struct Image {
   uint8_t buffer[IMAGE_SIZE];
 };
 
-void image_clear(struct Image *image);
+void image_clear(struct Image *image, enum Color color);
 void image_draw_line(struct Image *image, struct Line *line);
 void image_draw_circle(struct Image *image, struct Circle *circle);
 static inline enum Color image_get(struct Image *image, uint16_t x,
