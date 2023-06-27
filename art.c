@@ -60,7 +60,7 @@ static inline int16_t _random_int(int16_t x) { return art_random() % x; }
 
 static inline float _thickness(int16_t w) { return w * w / 2048.0 + 1.0; }
 static inline float _lerp(int16_t x0, int16_t x1, float t) {
-  return x0 * t + x1 * (1.0 - t);
+  return x0 * (1.0 - t) + x1 * t;
 }
 
 static void _leaf(struct Point p, uint16_t size) {
@@ -140,7 +140,7 @@ static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
   int16_t new_w = w * (tree->main_branch_ratio + _random(-125, 125));
 
   if (w > 100) {
-    for (uint8_t i = 0; i < (BEZIER_LINES_HIGH - 1); i++) {
+    for (uint8_t i = 1; i < (BEZIER_LINES_HIGH - 1); i++) {
       float t = i * (1.0 / BEZIER_LINES_HIGH);
       struct Point new_p = _bezier(t, points);
       _lines[_lines_count++] = (struct Line){
@@ -152,7 +152,7 @@ static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
       old_p = new_p;
     }
   } else {
-    for (uint8_t i = 0; i < (BEZIER_LINES_LOW - 1); i++) {
+    for (uint8_t i = 1; i < (BEZIER_LINES_LOW - 1); i++) {
       float t = i * (1.0 / BEZIER_LINES_LOW);
       struct Point new_p = _bezier(t, points);
       float part_w = _lerp(w, new_w, t);
