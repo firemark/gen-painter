@@ -297,7 +297,16 @@ void art_draw(struct Image *image) {
   }
 
   for (uint16_t i = 0; i < _lines_count; i++) {
-    image_draw_line(image, &_lines[i]);
+    struct Line *line = &_lines[i];
+    image_draw_line(image, line);
+    if (line->thickness > 5) {
+      struct Circle circle = {
+        .color=line->color,
+        .d=line->thickness / 2,
+        .p=line->p1,
+      };
+      image_draw_circle(image, &circle);
+    }
   }
 
   for (uint16_t i = 0; i < _circles_count; i++) {

@@ -136,19 +136,21 @@ static inline void _image_draw_line_low(struct Image *image, enum Color color,
   uint16_t half = thickness / 2;
   int16_t nd = 2 * dy - dx;
 
-  for (int16_t t = -half, nx0 = x0, nx1 = x1; t <= half; t++) {
-    _image_draw_line_low_simple(image, color, y0 + t, nx0, nx1, i, dx, dy);
+  for (int16_t t = 0, dnx = 0; t <= half; t++) {
+    uint16_t nx0_l = x0 > dnx ? x0 - dnx : 0;
+    uint16_t nx1_l = x1 > dnx ? x1 - dnx : 0;
+    uint16_t nx0_r = x0 + dnx;
+    uint16_t nx1_r = x1 + dnx;
+    _image_draw_line_low_simple(image, color, y0 + t, nx0_l, nx1_l, i, dx, dy);
+    _image_draw_line_low_simple(image, color, y0 - t, nx0_r, nx1_r, i, dx, dy);
     // TODO resolve problem with edges
 
     if (nd < 0) {
-      _image_draw_line_low_simple(image, color, y0 + t + 1, nx0, nx1, i, dx,
+      _image_draw_line_low_simple(image, color, y0 - t - 1, nx0_l, nx1_l, i, dx,
                                   dy);
-      if (nx0 > 0) {
-        nx0 -= i;
-      }
-      if (nx1 > 0) {
-        nx1 -= i;
-      }
+      _image_draw_line_low_simple(image, color, y0 + t + 1, nx0_r, nx1_r, i, dx,
+                                  dy);
+      dx += i;
       nd += 2 * dx;
     } else {
       nd += 2 * (dy - dx);
@@ -173,19 +175,21 @@ static inline void _image_draw_line_high(struct Image *image, enum Color color,
   uint16_t half = thickness / 2;
   int16_t nd = 2 * dx - dy;
 
-  for (int16_t t = -half, ny0 = y0, ny1 = y1; t <= half; t++) {
-    _image_draw_line_high_simple(image, color, x0 + t, ny0, ny1, i, dx, dy);
+  for (int16_t t = 0, dny = 0; t <= half; t++) {
+    uint16_t ny0_l = y0 > dny ? y0 - dny : 0;
+    uint16_t ny1_l = y1 > dny ? y1 - dny : 0;
+    uint16_t ny0_r = y0 + dny;
+    uint16_t ny1_r = y1 + dny;
+    _image_draw_line_high_simple(image, color, x0 + t, ny0_l, ny1_l, i, dx, dy);
+    _image_draw_line_high_simple(image, color, x0 - t, ny0_r, ny1_r, i, dx, dy);
     // TODO resolve problem with edges
 
     if (nd < 0) {
-      _image_draw_line_high_simple(image, color, x0 + 1 + t, ny0, ny1, i, dx,
+      _image_draw_line_high_simple(image, color, x0 + 1 + t, ny0_l, ny1_l, i, dx,
                                    dy);
-      if (ny0 > 0) {
-        ny0 -= i;
-      }
-      if (ny1 > 0) {
-        ny1 -= i;
-      }
+      _image_draw_line_high_simple(image, color, x0 - 1 - t, ny0_r, ny1_r, i, dx,
+                                   dy);
+      dny += i;
       nd += 2 * dy;
     } else {
       nd += 2 * (dx - dy);
