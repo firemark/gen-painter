@@ -51,21 +51,21 @@ void loop() {
 static void draw_to_screen(void) {
   static struct Image image;
 
-  image.x_offset = 0;
-  image.y_offset = 0;
+  image.offset.x = 0;
+  image.offset.y = 0;
   art_draw(&image);
   draw_S2(&image);
 
-  image.x_offset = EPD_12in48B_S2_WIDTH;
+  image.offset.x = EPD_12in48B_S2_WIDTH;
   art_draw(&image);
   draw_M2(&image);
 
-  image.x_offset = 0;
-  image.y_offset = EPD_12in48B_S2_HEIGHT;
+  image.offset.x = 0;
+  image.offset.y = EPD_12in48B_S2_HEIGHT;
   art_draw(&image);
   draw_M1(&image);
 
-  image.x_offset = EPD_12in48B_S2_WIDTH;
+  image.offset.x = EPD_12in48B_S2_WIDTH;
   art_draw(&image);
   draw_S1(&image);
 }

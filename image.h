@@ -14,25 +14,26 @@
 
 enum Color { WHITE = 0b00, BLACK = 0b01, RED = 0b10 };
 
-struct Line {
-  enum Color color;
-  uint8_t thickness;
-  int16_t x0;
-  int16_t y0;
-  int16_t x1;
-  int16_t y1;
-};
-
-struct Circle {
-  enum Color color;
-  uint8_t d;
+struct Point {
   int16_t x;
   int16_t y;
 };
 
+struct Line {
+  enum Color color;
+  uint8_t thickness;
+  struct Point p0;
+  struct Point p1;
+};
+
+struct Circle {
+  enum Color color;
+  struct Point p;
+  uint8_t d;
+};
+
 struct Image {
-  int16_t x_offset;
-  int16_t y_offset;
+  struct Point offset;
   uint8_t buffer[IMAGE_SIZE];
 };
 
@@ -44,7 +45,7 @@ void image_clear(struct Image *image, enum Color color);
 void image_draw_line(struct Image *image, struct Line *line);
 void image_draw_circle(struct Image *image, struct Circle *circle);
 void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,
-                        enum Color color, int16_t x, int16_t y);
+                        enum Color color, struct Point p);
 
 static inline enum Color image_get(struct Image *image, uint16_t x,
                                    uint16_t y) {

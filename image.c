@@ -215,10 +215,10 @@ static inline void _image_draw_line(struct Image *image, enum Color color,
 }
 
 void image_draw_line(struct Image *image, struct Line *line) {
-  int16_t x0 = line->x0 - image->x_offset;
-  int16_t x1 = line->x1 - image->x_offset;
-  int16_t y0 = line->y0 - image->y_offset;
-  int16_t y1 = line->y1 - image->y_offset;
+  int16_t x0 = line->p0.x - image->offset.x;
+  int16_t x1 = line->p1.x - image->offset.x;
+  int16_t y0 = line->p0.y - image->offset.y;
+  int16_t y1 = line->p1.y - image->offset.y;
 
   int16_t dx = x1 - x0;
   int16_t dy = y1 - y0;
@@ -290,7 +290,7 @@ void image_draw_line(struct Image *image, struct Line *line) {
     //        "d=%+4d,%+4d; "
     //        "offset=%+4d,%+4d\n",
     //        u_max / 256.0, u_min / 256.0, xn0, yn0, xn1, yn1, dx, dy,
-    //        image->x_offset, image->y_offset);
+    //        image->offset.x, image->offset.y);
 
     _image_draw_line(image, line->color, line->thickness, xn0, xn1, yn0, yn1);
   }
@@ -298,8 +298,8 @@ void image_draw_line(struct Image *image, struct Line *line) {
 
 void image_draw_circle(struct Image *image, struct Circle *circle) {
   int16_t t1 = circle->d / 16, t2;
-  int16_t x0 = circle->x - image->x_offset;
-  int16_t y0 = circle->y - image->y_offset;
+  int16_t x0 = circle->p.x - image->offset.x;
+  int16_t y0 = circle->p.y - image->offset.y;
 
   int16_t x = circle->d;
   int16_t y = 0;
@@ -334,11 +334,11 @@ void image_draw_circle(struct Image *image, struct Circle *circle) {
   }
 }
 
-void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap, enum Color color, int16_t x, int16_t y)
-{
-  int16_t x0 = x - BITMAP_WIDTH / 2 - image->x_offset;
+void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,
+                        enum Color color, struct Point p) {
+  int16_t x0 = p.x - BITMAP_WIDTH / 2 - image->offset.x;
   int16_t x1 = x0 + BITMAP_WIDTH - 1;
-  int16_t y0 = y - BITMAP_HEIGHT / 2 - image->y_offset;
+  int16_t y0 = p.y - BITMAP_HEIGHT / 2 - image->offset.y;
   int16_t y1 = y0 + BITMAP_HEIGHT - 1;
 
   CLIP_FINAL(x0, IMAGE_WIDTH - 1);

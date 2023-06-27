@@ -11,10 +11,7 @@
 #define SCREEN_WIDTH 1304
 #define SCREEN_HEIGHT 984
 
-
-uint32_t art_random() {
-  return rand();
-}
+uint32_t art_random() { return rand(); }
 
 SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
   SDL_Surface *surface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
@@ -43,7 +40,7 @@ SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
 }
 
 void core(SDL_Surface *screen_surface) {
-  struct Image image = {.x_offset = 0, .y_offset = 0};
+  struct Image image = {.offset.x = 0, .offset.y = 0};
 
   art_make();
 
@@ -55,8 +52,8 @@ void core(SDL_Surface *screen_surface) {
       art_draw(&image);
 
       SDL_Rect dstrect = {
-          .x = image.x_offset,
-          .y = image.y_offset,
+          .x = image.offset.x,
+          .y = image.offset.y,
           .w = W[x],
           .h = H[y],
       };
@@ -64,10 +61,10 @@ void core(SDL_Surface *screen_surface) {
       SDL_Surface *surface = draw(&image, W[x], H[y]);
       SDL_BlitSurface(surface, NULL, screen_surface, &dstrect);
       SDL_FreeSurface(surface);
-      image.x_offset += W[x];
+      image.offset.x += W[x];
     }
-    image.y_offset += H[y];
-    image.x_offset = 0;
+    image.offset.y += H[y];
+    image.offset.x = 0;
   }
 }
 
@@ -117,7 +114,6 @@ int main(int argc, char *args[]) {
 
         core(screenSurface);
         SDL_UpdateWindowSurface(window);
-
       }
     }
   }
