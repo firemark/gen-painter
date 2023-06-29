@@ -177,12 +177,12 @@ static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
 
   float new_rot = n > tree->top_start ? tree->top_rot : tree->bottom_rot;
 
-  float split_right = 0.25 + _random(-100, 100);
+  float split_right = _random(200, 800);
   struct Point side_right = _bezier(split_right, points);
   float w_right = _lerp(w, new_w, split_right) * tree->side_branch_ratio;
   _tree(n - 1, tree, side_right, w_right, rot + _random(-125, 125) + new_rot);
 
-  float split_left = 0.75 + _random(-100, 100);
+  float split_left = _random(200, 800);
   struct Point side_left = _bezier(split_left, points);
   float w_left = _lerp(w, new_w, split_left) * tree->side_branch_ratio;
   _tree(n - 1, tree, side_left, w_left, rot + _random(-125, 125) - new_rot);
