@@ -141,6 +141,13 @@ static inline void _image_draw_line_low(struct Image *image, enum Color color,
     uint16_t nx1_l = x1 > dnx ? x1 - dnx : 0;
     uint16_t nx0_r = x0 + dnx;
     uint16_t nx1_r = x1 + dnx;
+    if (nx0_r > IMAGE_WIDTH) {
+      nx0_r = IMAGE_WIDTH - 1;
+    }
+    if (nx1_r > IMAGE_WIDTH) {
+      nx1_r = IMAGE_WIDTH - 1;
+    }
+
     _image_draw_line_low_simple(image, color, y0 + t, nx0_l, nx1_l, i, dx, dy);
     _image_draw_line_low_simple(image, color, y0 - t, nx0_r, nx1_r, i, dx, dy);
     // TODO resolve problem with edges
@@ -180,15 +187,21 @@ static inline void _image_draw_line_high(struct Image *image, enum Color color,
     uint16_t ny1_l = y1 > dny ? y1 - dny : 0;
     uint16_t ny0_r = y0 + dny;
     uint16_t ny1_r = y1 + dny;
+    if (ny0_r > IMAGE_HEIGHT) {
+      ny0_r = IMAGE_HEIGHT - 1;
+    }
+    if (ny1_r > IMAGE_HEIGHT) {
+      ny1_r = IMAGE_HEIGHT - 1;
+    }
     _image_draw_line_high_simple(image, color, x0 + t, ny0_l, ny1_l, i, dx, dy);
     _image_draw_line_high_simple(image, color, x0 - t, ny0_r, ny1_r, i, dx, dy);
     // TODO resolve problem with edges
 
     if (nd < 0) {
-      _image_draw_line_high_simple(image, color, x0 + 1 + t, ny0_l, ny1_l, i, dx,
-                                   dy);
-      _image_draw_line_high_simple(image, color, x0 - 1 - t, ny0_r, ny1_r, i, dx,
-                                   dy);
+      _image_draw_line_high_simple(image, color, x0 + 1 + t, ny0_l, ny1_l, i,
+                                   dx, dy);
+      _image_draw_line_high_simple(image, color, x0 - 1 - t, ny0_r, ny1_r, i,
+                                   dx, dy);
       dny += i;
       nd += 2 * dy;
     } else {
