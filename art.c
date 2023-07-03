@@ -6,42 +6,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define LINES_SIZE (1024 * 3)
-#define CIRCLES_SIZE 1024
+#define BRANCHES_SIZE (1024 * 2)
+#define LEAFES_SIZE 1024
+#define GRASS_SIZE (1024 * 2)
 #define BEZIER_LINES_HIGH 16
 #define BEZIER_LINES_LOW 6
 
-static struct Bitmap EXAMPLE = {{
-    // clang-format off
-  0b11111111, 0b11111111,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b10000000, 0b00000001,
-  0b11111111, 0b11111111,
-    // clang-format on
-}};
-
-static uint16_t _lines_count;
-static uint16_t _circles_count;
+static uint16_t _branches_count;
+static uint16_t _leafes_count;
+static uint16_t _grass_count;
 static uint16_t _rain_density;
 
 static enum Color _background_color;
 static enum Color _leaves_color;
 static enum Color _branches_color;
 
-static struct Line *_lines;
-static struct Circle *_circles;
+struct LineZ {
+  struct Line line;
+  uint8_t zdepth;
+};
+
+static struct Line *_branches;
+static struct LineZ *_grass;
+static struct Circle *_leafes;
 
 struct Tree {
   float main_branch_ratio;
@@ -64,11 +51,11 @@ static inline float _lerp(int16_t x0, int16_t x1, float t) {
 }
 
 static void _leaf(struct Point p, uint16_t size) {
-  if (_circles_count >= CIRCLES_SIZE) {
+  if (_leafes_count >= LEAFES_SIZE) {
     return;
   }
 
-  _circles[_circles_count++] = (struct Circle){
+  _leafes[_leafes_count++] = (struct Circle){
       .color = _leaves_color,
       .d = size,
       .p = p,
@@ -99,7 +86,8 @@ static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
     _leaf(p, w / 20 + _random_int(5));
   }
 
-  if (n == 0 || _lines_count >= LINES_SIZE - BEZIER_LINES_HIGH) {
+  uint16_t chunks = w > 100 ? BEZIER_LINES_HIGH : BEZIER_LINES_LOW;
+  if (n == 0 || _branches_count >= BRANCHES_SIZE - chunks) {
     return;
   }
 
@@ -139,36 +127,22 @@ static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
 
   int16_t new_w = w * (tree->main_branch_ratio + _random(-125, 125));
 
-  if (w > 100) {
-    for (uint8_t i = 1; i < (BEZIER_LINES_HIGH - 1); i++) {
-      float t = i * (1.0 / BEZIER_LINES_HIGH);
-      struct Point new_p = _bezier(t, points);
-      _lines[_lines_count++] = (struct Line){
-          .color = _branches_color,
-          .thickness = _thickness(w),
-          .p0 = old_p,
-          .p1 = new_p,
-      };
-      old_p = new_p;
-    }
-  } else {
-    for (uint8_t i = 1; i < (BEZIER_LINES_LOW - 1); i++) {
-      float t = i * (1.0 / BEZIER_LINES_LOW);
-      struct Point new_p = _bezier(t, points);
-      float part_w = _lerp(w, new_w, t);
-      _lines[_lines_count++] = (struct Line){
-          .color = _branches_color,
-          .thickness = _thickness(part_w),
-          .p0 = old_p,
-          .p1 = new_p,
-      };
-      old_p = new_p;
-    }
+  for (uint8_t i = 1; i < chunks - 1; i++) {
+    float t = (float)i / chunks;
+    struct Point new_p = _bezier(t, points);
+    float part_w = _lerp(w, new_w, t);
+    _branches[_branches_count++] = (struct Line){
+        .color = _branches_color,
+        .thickness = _thickness(part_w),
+        .p0 = old_p,
+        .p1 = new_p,
+    };
+    old_p = new_p;
   }
 
-  _lines[_lines_count++] = (struct Line){
+  _branches[_branches_count++] = (struct Line){
       .color = _branches_color,
-      .thickness = _thickness(w),
+      .thickness = _thickness(new_w),
       .p0 = old_p,
       .p1 = points[3],
   };
@@ -186,7 +160,6 @@ static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
   struct Point side_left = _bezier(split_left, points);
   float w_left = _lerp(w, new_w, split_left) * tree->side_branch_ratio;
   _tree(n - 1, tree, side_left, w_left, rot + _random(-125, 125) - new_rot);
-
 }
 
 static void _grid(struct Image *image) {
@@ -212,7 +185,7 @@ static void _rain(struct Image *image) {
   for (uint16_t i = 0; i < _rain_density; i++) {
     struct Point p = {image->offset.x + _random_int(IMAGE_WIDTH),
                       image->offset.y + _random_int(IMAGE_HEIGHT)};
-    image_paste_bitmap(image, &EXAMPLE, _leaves_color, p);
+    // image_paste_bitmap(image, &EXAMPLE, _leaves_color, p);
   }
 }
 
@@ -241,10 +214,36 @@ static void _random_colors(void) {
   }
 }
 
+static void _generate_grass(int16_t y) {
+  int16_t x = 0;
+  while (x < FULL_IMAGE_WIDTH && _grass_count < GRASS_SIZE - 4) {
+    x += 10 - 3 + _random_int(6);
+    int16_t r = -40 + _random_int(80);
+    struct Point points[4] = {
+        {x, y},
+        {x - 5 - r / 4, y - 40 + _random_int(5)},
+        {x - 5 + r / 2, y - 60 + _random_int(5)},
+        {x - 5 + r, y - 70 + _random_int(5)},
+    };
+    for (uint8_t i = 0; i < 3; i++) {
+      _grass[_grass_count++] = (struct LineZ){
+          .line =
+              (struct Line){
+                  .color = _leaves_color,
+                  .thickness = 2,
+                  .p0 = points[i],
+                  .p1 = points[i + 1],
+              },
+          .zdepth = _random_int(255),
+      };
+    }
+  }
+}
+
 static void _generate_tree(void) {
   struct Point p = {
       FULL_IMAGE_WIDTH / 2 + _random_int(200) - 100,
-      FULL_IMAGE_HEIGHT - 1,
+      FULL_IMAGE_HEIGHT - 30,
   };
   uint16_t w = 200 + _random_int(50);
   float rot = _random(-50, 50);
@@ -261,23 +260,30 @@ static void _generate_tree(void) {
 }
 
 static void _reset(void) {
-  _lines_count = 0;
-  _circles_count = 0;
+  _branches_count = 0;
+  _leafes_count = 0;
+  _grass_count = 0;
 }
 
 void art_init(void) {
-  _lines = malloc(sizeof(struct Line) * LINES_SIZE);
-  _circles = malloc(sizeof(struct Circle) * CIRCLES_SIZE);
+  _branches = malloc(sizeof(struct Line) * BRANCHES_SIZE);
+  _grass = malloc(sizeof(struct LineZ) * GRASS_SIZE);
+  _leafes = malloc(sizeof(struct Circle) * LEAFES_SIZE);
 }
 
 void art_make(void) {
   _reset();
   _random_colors();
   _generate_tree();
+  _generate_grass(FULL_IMAGE_HEIGHT);
+  _generate_grass(FULL_IMAGE_HEIGHT - 20);
+  _generate_grass(FULL_IMAGE_HEIGHT - 40);
+  _generate_grass(FULL_IMAGE_HEIGHT - 60);
   _rain_density = _random_int(512);
 
-  printf("total lines: %d\n", _lines_count);
-  printf("total circles: %d\n", _circles_count);
+  printf("total branches: %d\n", _branches_count);
+  printf("total leafes: %d\n", _leafes_count);
+  printf("total grass: %d\n", _grass_count);
 }
 
 void art_draw(struct Image *image) {
@@ -285,35 +291,47 @@ void art_draw(struct Image *image) {
   _grid(image);
   // _rain(image);
 
-  for (uint16_t i = 0; i < _circles_count; i++) {
+  for (uint16_t i = 0; i < _leafes_count; i++) {
     for (uint16_t j = 0; j < 3; j++) {
       uint16_t dx = 16 - _random_int(32);
       uint16_t dy = 16 - _random_int(32);
-      struct Circle circle = _circles[i];
+      struct Circle circle = _leafes[i];
       circle.p.x += dx;
       circle.p.y += dy;
       image_draw_circle(image, &circle);
     }
   }
 
-  for (uint16_t i = 0; i < _lines_count; i++) {
-    struct Line *line = &_lines[i];
+  for (uint16_t i = 0; i < _grass_count; i++) {
+    if (_grass[i].zdepth < 128) {
+      image_draw_line(image, &_grass[i].line);
+    }
+  }
+
+  for (uint16_t i = 0; i < _branches_count; i++) {
+    struct Line *line = &_branches[i];
     image_draw_line(image, line);
     if (line->thickness > 5) {
       struct Circle circle = {
-        .color=line->color,
-        .d=line->thickness / 2,
-        .p=line->p1,
+          .color = line->color,
+          .d = line->thickness / 2,
+          .p = line->p1,
       };
       image_draw_circle(image, &circle);
     }
   }
 
-  for (uint16_t i = 0; i < _circles_count; i++) {
+  for (uint16_t i = 0; i < _grass_count; i++) {
+    if (_grass[i].zdepth > 128) {
+      image_draw_line(image, &_grass[i].line);
+    }
+  }
+
+  for (uint16_t i = 0; i < _leafes_count; i++) {
     for (uint16_t j = 0; j < 2; j++) {
       uint16_t dx = 16 - (art_random() % 32);
       uint16_t dy = 16 - (art_random() % 32);
-      struct Circle circle = _circles[i];
+      struct Circle circle = _leafes[i];
       circle.p.x += dx;
       circle.p.y += dy;
       image_draw_circle(image, &circle);
