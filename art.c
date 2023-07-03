@@ -1,4 +1,5 @@
 #include "art.h"
+#include "eink-esp32/image.h"
 #include "image.h"
 #include "perlin.h"
 
@@ -251,11 +252,19 @@ static void _reset(void) {
 }
 
 static void _draw_background(struct Image *image) {
-  for(uint8_t i = 8; i < 16; i++) {
-    int16_t y = FULL_IMAGE_HEIGHT - 1 - (i - 8) * _background_size + _background_shift;
-    struct Point p0 = {0, y - _background_size + 1};
-    struct Point p1 = {FULL_IMAGE_WIDTH - 1, y};
-    image_draw_rectangle(image, _branches_color, 255 - i * 16, p0, p1);
+  for (uint8_t i = 15; i >= 4; i--) {
+    int16_t y =
+        FULL_IMAGE_HEIGHT - 1 - (i - 4) * _background_size + _background_shift;
+    for (int16_t x = 0; x < FULL_IMAGE_WIDTH; x += _background_size / 2 + _random_int(16)) {
+      struct Point point = {x, y + _random_int(32)};
+      struct Circle circle = {
+          .p = point,
+          .d = _background_size,
+          .color = _branches_color,
+      };
+      image_draw_circle_threshold(image, &circle, 255 - i * 16,
+                                  _background_color);
+    }
   }
 }
 
@@ -282,7 +291,6 @@ void art_make(void) {
   printf("total leafes: %d\n", _leafes_count);
   printf("total grass: %d\n", _grass_count);
 }
-
 
 void art_draw(struct Image *image) {
   image_clear(image, _background_color);

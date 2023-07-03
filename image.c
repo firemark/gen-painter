@@ -441,3 +441,68 @@ void image_draw_rectangle(struct Image *image, enum Color color,
     }
   }
 }
+
+void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
+                                 uint8_t threshold, enum Color background) {
+  int16_t t1 = circle->d / 16, t2;
+  int16_t x0 = circle->p.x - image->offset.x;
+  int16_t y0 = circle->p.y - image->offset.y;
+
+  int16_t x = circle->d;
+  int16_t y = 0;
+  while (x >= y) {
+    int16_t x_min = x0 - x;
+    int16_t x_max = x0 + x;
+    int16_t y_min = x0 - y;
+    int16_t y_max = x0 + y;
+
+    CLIP_FINAL(x_min, IMAGE_WIDTH - 1);
+    CLIP_FINAL(x_max, IMAGE_WIDTH - 1);
+    CLIP_FINAL(y_min, IMAGE_WIDTH - 1);
+    CLIP_FINAL(y_max, IMAGE_WIDTH - 1);
+
+    if (x_max > x_min) {
+      int16_t yy0 = y0 + y;
+      int16_t yy1 = y0 - y;
+      uint16_t zz0 = yy0 * yy0;
+      uint16_t zz1 = yy1 * yy1;
+      for (int16_t xx = x_min; xx <= x_max; xx++) {
+        uint16_t z0 = xx * xx + zz0;
+        uint16_t z1 = xx * xx + zz1;
+
+        _image_set_pixel(image,
+                         _threshold(threshold, z0) ? circle->color : background,
+                         xx, yy0);
+        _image_set_pixel(image,
+                         _threshold(threshold, z1) ? circle->color : background,
+                         xx, yy1);
+      }
+    }
+
+    if (y_max > y_min) {
+      int16_t yy0 = y0 + x;
+      int16_t yy1 = y0 - x;
+      uint16_t zz0 = yy0 * yy0;
+      uint16_t zz1 = yy1 * yy1;
+      for (int16_t xx = y_min; xx <= y_max; xx++) {
+        uint16_t z0 = xx * xx + zz0;
+        uint16_t z1 = xx * xx + zz1;
+
+        _image_set_pixel(image,
+                         _threshold(threshold, z0) ? circle->color : background,
+                         xx, yy0);
+        _image_set_pixel(image,
+                         _threshold(threshold, z1) ? circle->color : background,
+                         xx, yy1);
+      }
+    }
+
+    y++;
+    t1 = t1 + y;
+    t2 = t1 - x;
+    if (t2 >= 0) {
+      t1 = t2;
+      x--;
+    }
+  }
+}
