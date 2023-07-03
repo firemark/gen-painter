@@ -375,3 +375,70 @@ void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,
     }
   }
 }
+
+static inline uint8_t _threshold(uint8_t threshold, uint16_t z) {
+  switch (threshold / 16) {
+  case 0:
+    return 0;
+  case 1:
+    return z % 128 == 0;
+  case 2:
+    return z % 64 == 0;
+  case 3:
+    return z % 32 == 0;
+  case 4:
+    return z % 16 == 0;
+  case 5:
+    return z % 8 == 0;
+  case 6:
+    return z % 4 == 0;
+  case 7:
+    return z % 2 == 0;
+  case 8:
+    return z % 4 != 0;
+  case 9:
+    return z % 8 != 0;
+  case 10:
+    return z % 16 != 0;
+  case 11:
+    return z % 32 != 0;
+  case 12:
+    return z % 64 != 0;
+  case 13:
+    return z % 128 != 0;
+  default:
+    return 1;
+  }
+}
+
+void image_draw_rectangle(struct Image *image, enum Color color,
+                          uint8_t threshold, struct Point p0, struct Point p1) {
+  int16_t x0 = p0.x - image->offset.x;
+  int16_t x1 = p1.x - image->offset.x;
+  int16_t y0 = p0.y - image->offset.y;
+  int16_t y1 = p1.y - image->offset.y;
+
+  if (y0 > y1) {
+    int16_t y = y1;
+    y1 = y0;
+    y0 = y;
+  }
+
+  if (x0 > x1) {
+    int16_t x = x1;
+    x1 = x0;
+    x0 = x;
+  }
+
+  CLIP(x0, x1, IMAGE_WIDTH - 1);
+  CLIP(y0, y1, IMAGE_HEIGHT - 1);
+
+  for (uint16_t y = y0; y <= y1; y++) {
+    for (uint16_t x = x0; x <= x1; x++) {
+      uint16_t z = x * x + y * y;
+      if (_threshold(threshold, z)) {
+        _image_set_pixel(image, color, x, y);
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 #include "art.h"
+#include "eink-esp32/image.h"
 #include "image.h"
 
 #include <math.h>
@@ -16,6 +17,8 @@ static uint16_t _branches_count;
 static uint16_t _leafes_count;
 static uint16_t _grass_count;
 static uint16_t _rain_density;
+static uint8_t _background_size;
+static uint8_t _background_shift;
 
 static enum Color _background_color;
 static enum Color _leaves_color;
@@ -221,9 +224,9 @@ static void _generate_grass(int16_t y) {
     int16_t r = -40 + _random_int(80);
     struct Point points[4] = {
         {x, y},
-        {x - 5 - r / 4, y - 40 + _random_int(5)},
-        {x - 5 + r / 2, y - 60 + _random_int(5)},
-        {x - 5 + r, y - 70 + _random_int(5)},
+        {x - 5 - r / 4, y - 30 + _random_int(5)},
+        {x - 5 + r / 2, y - 40 + _random_int(5)},
+        {x - 5 + r, y - 50 + _random_int(5)},
     };
     for (uint8_t i = 0; i < 3; i++) {
       _grass[_grass_count++] = (struct LineZ){
@@ -243,7 +246,7 @@ static void _generate_grass(int16_t y) {
 static void _generate_tree(void) {
   struct Point p = {
       FULL_IMAGE_WIDTH / 2 + _random_int(200) - 100,
-      FULL_IMAGE_HEIGHT - 30,
+      FULL_IMAGE_HEIGHT - 60,
   };
   uint16_t w = 200 + _random_int(50);
   float rot = _random(-50, 50);
@@ -265,6 +268,15 @@ static void _reset(void) {
   _grass_count = 0;
 }
 
+static void _draw_background(struct Image *image) {
+  for(uint8_t i = 6; i < 16; i++) {
+    int16_t y = FULL_IMAGE_HEIGHT - 1 - (i - 6) * _background_size + _background_shift;
+    struct Point p0 = {0, y - _background_size + 1};
+    struct Point p1 = {FULL_IMAGE_WIDTH - 1, y};
+    image_draw_rectangle(image, _branches_color, 255 - i * 16, p0, p1);
+  }
+}
+
 void art_init(void) {
   _branches = malloc(sizeof(struct Line) * BRANCHES_SIZE);
   _grass = malloc(sizeof(struct LineZ) * GRASS_SIZE);
@@ -280,16 +292,20 @@ void art_make(void) {
   _generate_grass(FULL_IMAGE_HEIGHT - 40);
   _generate_grass(FULL_IMAGE_HEIGHT - 60);
   _rain_density = _random_int(512);
+  _background_size = 32 + _random_int(32);
+  _background_shift = _random_int(32);
 
   printf("total branches: %d\n", _branches_count);
   printf("total leafes: %d\n", _leafes_count);
   printf("total grass: %d\n", _grass_count);
 }
 
+
 void art_draw(struct Image *image) {
   image_clear(image, _background_color);
-  _grid(image);
+  // _grid(image);
   // _rain(image);
+  _draw_background(image);
 
   for (uint16_t i = 0; i < _leafes_count; i++) {
     for (uint16_t j = 0; j < 3; j++) {
