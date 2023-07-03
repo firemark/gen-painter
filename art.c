@@ -1,6 +1,6 @@
 #include "art.h"
-#include "eink-esp32/image.h"
 #include "image.h"
+#include "perlin.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -17,6 +17,7 @@ static uint16_t _branches_count;
 static uint16_t _leafes_count;
 static uint16_t _grass_count;
 static uint16_t _rain_density;
+static uint16_t _perlin;
 static uint8_t _background_size;
 static uint8_t _background_shift;
 
@@ -165,32 +166,13 @@ static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
   _tree(n - 1, tree, side_left, w_left, rot + _random(-125, 125) - new_rot);
 }
 
-static void _grid(struct Image *image) {
-  if (_background_color == BLACK) {
-    return;
-  }
-  for (uint16_t y = 0; y < IMAGE_HEIGHT; y += 4) {
-    for (uint16_t x = 0; x < IMAGE_WIDTH; x += 4) {
-      struct Point p = {image->offset.x + x + _random_int(4),
-                        image->offset.y + y + _random_int(4)};
-      struct Line line = {
-          .color = _branches_color,
-          .thickness = 1,
-          .p0 = p,
-          .p1 = p,
-      };
-      image_draw_line(image, &line);
-    }
-  }
-}
-
-static void _rain(struct Image *image) {
-  for (uint16_t i = 0; i < _rain_density; i++) {
-    struct Point p = {image->offset.x + _random_int(IMAGE_WIDTH),
-                      image->offset.y + _random_int(IMAGE_HEIGHT)};
-    // image_paste_bitmap(image, &EXAMPLE, _leaves_color, p);
-  }
-}
+// static void _rain(struct Image *image) {
+//   for (uint16_t i = 0; i < _rain_density; i++) {
+//     struct Point p = {image->offset.x + _random_int(IMAGE_WIDTH),
+//                       image->offset.y + _random_int(IMAGE_HEIGHT)};
+//     image_paste_bitmap(image, &EXAMPLE, _leaves_color, p);
+//   }
+// }
 
 static void _random_colors(void) {
   switch (_random_int(4)) {
@@ -224,7 +206,7 @@ static void _generate_grass(int16_t y) {
     int16_t r = -40 + _random_int(80);
     struct Point points[4] = {
         {x, y},
-        {x - 5 - r / 4, y - 30 + _random_int(5)},
+        {x - 5 - r / 4, y - 20 + _random_int(5)},
         {x - 5 + r / 2, y - 40 + _random_int(5)},
         {x - 5 + r, y - 50 + _random_int(5)},
     };
@@ -233,7 +215,7 @@ static void _generate_grass(int16_t y) {
           .line =
               (struct Line){
                   .color = _leaves_color,
-                  .thickness = 2,
+                  .thickness = 6 - 2 * i,
                   .p0 = points[i],
                   .p1 = points[i + 1],
               },
@@ -269,8 +251,8 @@ static void _reset(void) {
 }
 
 static void _draw_background(struct Image *image) {
-  for(uint8_t i = 6; i < 16; i++) {
-    int16_t y = FULL_IMAGE_HEIGHT - 1 - (i - 6) * _background_size + _background_shift;
+  for(uint8_t i = 8; i < 16; i++) {
+    int16_t y = FULL_IMAGE_HEIGHT - 1 - (i - 8) * _background_size + _background_shift;
     struct Point p0 = {0, y - _background_size + 1};
     struct Point p1 = {FULL_IMAGE_WIDTH - 1, y};
     image_draw_rectangle(image, _branches_color, 255 - i * 16, p0, p1);
@@ -294,6 +276,7 @@ void art_make(void) {
   _rain_density = _random_int(512);
   _background_size = 32 + _random_int(32);
   _background_shift = _random_int(32);
+  _perlin = _random_int(0xFF00);
 
   printf("total branches: %d\n", _branches_count);
   printf("total leafes: %d\n", _leafes_count);
@@ -305,6 +288,7 @@ void art_draw(struct Image *image) {
   image_clear(image, _background_color);
   // _grid(image);
   // _rain(image);
+  // image_perlin(image, _branches_color, _perlin, 0.005);
   _draw_background(image);
 
   for (uint16_t i = 0; i < _leafes_count; i++) {
