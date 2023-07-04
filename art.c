@@ -203,13 +203,14 @@ static void _random_colors(void) {
 static void _generate_grass(int16_t y) {
   int16_t x = 0;
   while (x < FULL_IMAGE_WIDTH && _grass_count < GRASS_SIZE - 4) {
+    int16_t yy = y - 16 + _random_int(32);
     x += 10 - 3 + _random_int(6);
     int16_t r = -40 + _random_int(80);
     struct Point points[4] = {
-        {x, y},
-        {x - 5 - r / 4, y - 20 + _random_int(5)},
-        {x - 5 + r / 2, y - 40 + _random_int(5)},
-        {x - 5 + r, y - 50 + _random_int(5)},
+        {x, yy},
+        {x - 5 - r / 4, yy - 20 + _random_int(5)},
+        {x - 5 + r / 2, yy - 40 + _random_int(5)},
+        {x - 5 + r, yy - 50 + _random_int(5)},
     };
     for (uint8_t i = 0; i < 3; i++) {
       _grass[_grass_count++] = (struct LineZ){
@@ -251,21 +252,26 @@ static void _reset(void) {
   _grass_count = 0;
 }
 
-static void _draw_background(struct Image *image) {
-  for (uint8_t i = 15; i >= 4; i--) {
-    int16_t y =
-        FULL_IMAGE_HEIGHT - 1 - (i - 4) * _background_size + _background_shift;
-    for (int16_t x = 0; x < FULL_IMAGE_WIDTH; x += _background_size / 2 + _random_int(16)) {
-      struct Point point = {x, y + _random_int(32)};
-      struct Circle circle = {
-          .p = point,
-          .d = _background_size,
-          .color = _branches_color,
-      };
-      image_draw_circle_threshold(image, &circle, 255 - i * 16,
-                                  _background_color);
-    }
+static void _draw_background_bar(struct Image *image, int16_t y,
+                                 uint8_t threshold) {
+  for (int16_t x = 0; x < FULL_IMAGE_WIDTH;
+       x += _background_size / 2 + _random_int(16)) {
+    struct Point point = {x, y + _random_int(32)};
+    struct Circle circle = {
+        .p = point,
+        .d = _background_size,
+        .color = _branches_color,
+    };
+    image_draw_circle_threshold(image, &circle, threshold, _background_color);
   }
+}
+
+static void _draw_background(struct Image *image) {
+  int16_t y = FULL_IMAGE_HEIGHT - 1 - _background_size + _background_shift;
+  _draw_background_bar(image, y - _background_size * 2, 96);
+  _draw_background_bar(image, y - _background_size, 112);
+  _draw_background_bar(image, y - _background_size / 2, 128);
+  _draw_background_bar(image, y, 176);
 }
 
 void art_init(void) {
@@ -283,7 +289,7 @@ void art_make(void) {
   _generate_grass(FULL_IMAGE_HEIGHT - 40);
   _generate_grass(FULL_IMAGE_HEIGHT - 60);
   _rain_density = _random_int(512);
-  _background_size = 32 + _random_int(32);
+  _background_size = 48 + _random_int(64);
   _background_shift = _random_int(32);
   _perlin = _random_int(0xFF00);
 
