@@ -10,12 +10,14 @@
 #define BRANCHES_SIZE (1024 * 2)
 #define LEAFES_SIZE 1024
 #define GRASS_SIZE (1024 * 2)
+#define CLOUDS_SIZE 8
 #define BEZIER_LINES_HIGH 16
 #define BEZIER_LINES_LOW 6
 
 static uint16_t _branches_count;
 static uint16_t _leafes_count;
 static uint16_t _grass_count;
+static uint16_t _clouds_count;
 
 static uint16_t _rain_density;
 static uint16_t _perlin;
@@ -34,9 +36,15 @@ struct LineZ {
   uint8_t zdepth;
 };
 
+struct Cloud {
+  struct Point point;
+  uint8_t size;
+};
+
 static struct Line *_branches;
 static struct LineZ *_grass;
 static struct Circle *_leafes;
+static struct Cloud *_clouds;
 
 struct Tree {
   float main_branch_ratio;
@@ -230,6 +238,20 @@ static void _generate_grass(int16_t y) {
   }
 }
 
+static void _generate_clouds(void) {
+  _clouds_count = _random_int(8);
+  for (uint8_t i = 0; i < _clouds_count; i++) {
+    _clouds[i] = (struct Cloud){
+        .point =
+            {
+                .x = _random_int(FULL_IMAGE_WIDTH),
+                .y = _random_int(500),
+            },
+        .size = 8 + _random_int(8),
+    };
+  }
+}
+
 static void _generate_tree(void) {
   struct Point p = {
       FULL_IMAGE_WIDTH / 2 + _random_int(200) - 100,
@@ -253,6 +275,7 @@ static void _reset(void) {
   _branches_count = 0;
   _leafes_count = 0;
   _grass_count = 0;
+  _clouds_count = 0;
 
   for (uint8_t i = 0; i < sizeof(_random_background_shifts); i++) {
     _random_background_shifts[i] = _random_int(32);
@@ -278,9 +301,37 @@ static void _draw_background_bar(struct Image *image, int16_t y,
   }
 }
 
+static void _draw_background_cloud(struct Image *image, int16_t x, int16_t y,
+                                   uint8_t size, uint8_t threshold) {
+
+  for (uint8_t i = 0; i < 8; i++) {
+    int8_t r0 = _random_background_shifts[_background_shifts_index] / 2;
+    int8_t r1 = _random_background_shifts[_background_shifts_index + 1] / 2;
+    _background_shifts_index =
+        (_background_shifts_index + 2) % sizeof(_random_background_shifts);
+    x += _background_size / 2 + r0;
+    struct Point point = {x, y + r1};
+    struct Circle circle = {
+        .p = point,
+        .d = size + size / 4 * (i + 1) * (8 - i),
+        .color = _branches_color,
+    };
+
+    image_draw_circle_threshold(image, &circle, threshold, _background_color);
+  }
+}
+
 static void _draw_background(struct Image *image) {
   int16_t y = FULL_IMAGE_HEIGHT - 1 - _background_size + _background_shift;
   _background_shifts_index = 0;
+
+  for (uint8_t i = 0; i < _clouds_count; i++) {
+    struct Cloud *cloud = &_clouds[i];
+    int16_t y_start = cloud->point.y - cloud->size;
+    int16_t y_end = cloud->point.y + cloud->size;
+    _draw_background_cloud(image, cloud->point.x, y_start, cloud->size, 128);
+    _draw_background_cloud(image, cloud->point.x, y_end, cloud->size, 128);
+  }
 
   _draw_background_bar(image, y - _background_size * 2, 96);
   _draw_background_bar(image, y - _background_size, 112);
@@ -292,12 +343,14 @@ void art_init(void) {
   _branches = malloc(sizeof(struct Line) * BRANCHES_SIZE);
   _grass = malloc(sizeof(struct LineZ) * GRASS_SIZE);
   _leafes = malloc(sizeof(struct Circle) * LEAFES_SIZE);
+  _clouds = malloc(sizeof(struct Cloud) * CLOUDS_SIZE);
 }
 
 void art_make(void) {
   _reset();
   _random_colors();
   _generate_tree();
+  _generate_clouds();
   _generate_grass(FULL_IMAGE_HEIGHT);
   _generate_grass(FULL_IMAGE_HEIGHT - 20);
   _generate_grass(FULL_IMAGE_HEIGHT - 40);
