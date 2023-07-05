@@ -239,6 +239,16 @@ static void _generate_grass(int16_t y) {
 }
 
 static void _generate_clouds(void) {
+  // _clouds_count = 1;
+  // _clouds[0] = (struct Cloud){
+  //     .point =
+  //         {
+  //             .x = 100,
+  //             .y = 200,
+  //         },
+  //     .size = 8 + _random_int(8),
+  // };
+  // return;
   _clouds_count = _random_int(8);
   for (uint8_t i = 0; i < _clouds_count; i++) {
     _clouds[i] = (struct Cloud){
@@ -301,23 +311,33 @@ static void _draw_background_bar(struct Image *image, int16_t y,
   }
 }
 
-static void _draw_background_cloud(struct Image *image, int16_t x, int16_t y,
-                                   uint8_t size, uint8_t threshold) {
-
-  for (uint8_t i = 0; i < 8; i++) {
+static void _draw_background_cloud_bar(struct Image *image, int16_t x_start,
+                                       int16_t x_end, int16_t y, uint8_t width,
+                                       uint8_t size, uint8_t threshold) {
+  int16_t x = x_start;
+  while (x < x_end) {
     int8_t r0 = _random_background_shifts[_background_shifts_index] / 2;
     int8_t r1 = _random_background_shifts[_background_shifts_index + 1] / 2;
     _background_shifts_index =
         (_background_shifts_index + 2) % sizeof(_random_background_shifts);
-    x += _background_size / 2 + r0;
+    x += size / 2 + r0;
     struct Point point = {x, y + r1};
     struct Circle circle = {
         .p = point,
-        .d = size + size / 4 * (i + 1) * (8 - i),
+        .d = size + size / 2,
         .color = _branches_color,
     };
 
     image_draw_circle_threshold(image, &circle, threshold, _background_color);
+  }
+}
+
+static void _draw_background_cloud(struct Image *image, struct Cloud *cloud) {
+  for (uint8_t j = 0; j < 4; j++) {
+    int16_t y = cloud->point.y - cloud->size * j * 2;
+    int16_t x_start = cloud->point.x + cloud->size * j * 8;
+    int16_t x_end = cloud->point.x + cloud->size * (8 - j) * 8;
+    _draw_background_cloud_bar(image, x_start, x_end, y, 16, cloud->size, 128);
   }
 }
 
@@ -326,11 +346,7 @@ static void _draw_background(struct Image *image) {
   _background_shifts_index = 0;
 
   for (uint8_t i = 0; i < _clouds_count; i++) {
-    struct Cloud *cloud = &_clouds[i];
-    int16_t y_start = cloud->point.y - cloud->size;
-    int16_t y_end = cloud->point.y + cloud->size;
-    _draw_background_cloud(image, cloud->point.x, y_start, cloud->size, 128);
-    _draw_background_cloud(image, cloud->point.x, y_end, cloud->size, 128);
+    _draw_background_cloud(image, &_clouds[i]);
   }
 
   _draw_background_bar(image, y - _background_size * 2, 96);
