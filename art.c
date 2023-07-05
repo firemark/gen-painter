@@ -1,5 +1,4 @@
 #include "art.h"
-#include "eink-esp32/image.h"
 #include "image.h"
 #include "perlin.h"
 
@@ -17,10 +16,14 @@
 static uint16_t _branches_count;
 static uint16_t _leafes_count;
 static uint16_t _grass_count;
+
 static uint16_t _rain_density;
 static uint16_t _perlin;
+
 static uint8_t _background_size;
 static uint8_t _background_shift;
+static int8_t _random_background_shifts[64];
+static uint8_t _background_shifts_index;
 
 static enum Color _background_color;
 static enum Color _leaves_color;
@@ -250,13 +253,22 @@ static void _reset(void) {
   _branches_count = 0;
   _leafes_count = 0;
   _grass_count = 0;
+
+  for (uint8_t i = 0; i < sizeof(_random_background_shifts); i++) {
+    _random_background_shifts[i] = _random_int(32);
+  }
 }
 
 static void _draw_background_bar(struct Image *image, int16_t y,
                                  uint8_t threshold) {
-  for (int16_t x = 0; x < FULL_IMAGE_WIDTH;
-       x += _background_size / 2 + _random_int(16)) {
-    struct Point point = {x, y + _random_int(32)};
+  int16_t x = 0;
+  while (x < FULL_IMAGE_WIDTH) {
+    int8_t r0 = _random_background_shifts[_background_shifts_index];
+    int8_t r1 = _random_background_shifts[_background_shifts_index + 1];
+    _background_shifts_index =
+        (_background_shifts_index + 2) % sizeof(_random_background_shifts);
+    x += _background_size / 2 + r0;
+    struct Point point = {x, y + r1};
     struct Circle circle = {
         .p = point,
         .d = _background_size,
@@ -268,10 +280,12 @@ static void _draw_background_bar(struct Image *image, int16_t y,
 
 static void _draw_background(struct Image *image) {
   int16_t y = FULL_IMAGE_HEIGHT - 1 - _background_size + _background_shift;
+  _background_shifts_index = 0;
+
   _draw_background_bar(image, y - _background_size * 2, 96);
   _draw_background_bar(image, y - _background_size, 112);
   _draw_background_bar(image, y - _background_size / 2, 128);
-  _draw_background_bar(image, y, 176);
+  _draw_background_bar(image, y, 160);
 }
 
 void art_init(void) {
@@ -289,8 +303,8 @@ void art_make(void) {
   _generate_grass(FULL_IMAGE_HEIGHT - 40);
   _generate_grass(FULL_IMAGE_HEIGHT - 60);
   _rain_density = _random_int(512);
-  _background_size = 48 + _random_int(64);
-  _background_shift = _random_int(32);
+  _background_size = 48 + _random_int(32);
+  _background_shift = _random_int(16);
   _perlin = _random_int(0xFF00);
 
   printf("total branches: %d\n", _branches_count);
