@@ -38,7 +38,8 @@ struct LineZ {
 
 struct Cloud {
   struct Point point;
-  uint8_t size;
+  uint8_t width;
+  uint8_t height;
 };
 
 static struct Line *_branches;
@@ -257,7 +258,8 @@ static void _generate_clouds(void) {
                 .x = _random_int(FULL_IMAGE_WIDTH),
                 .y = _random_int(500),
             },
-        .size = 8 + _random_int(8),
+        .width = 8 + _random_int(8),
+        .height = 4 + _random_int(3),
     };
   }
 }
@@ -332,13 +334,56 @@ static void _draw_background_cloud_bar(struct Image *image, int16_t x_start,
   }
 }
 
-static void _draw_background_cloud(struct Image *image, struct Cloud *cloud) {
-  for (uint8_t j = 0; j < 4; j++) {
-    int16_t y = cloud->point.y - cloud->size * j * 2;
-    int16_t x_start = cloud->point.x + cloud->size * j * 8;
-    int16_t x_end = cloud->point.x + cloud->size * (8 - j) * 8;
-    _draw_background_cloud_bar(image, x_start, x_end, y, 16, cloud->size, 128);
+static void _draw_background_cloud_fancy(struct Image *image,
+                                         struct Cloud *cloud,
+                                         uint8_t treshold, int16_t x_shift, int16_t y_shift, uint8_t size) {
+  const uint8_t mult = 24;
+  uint8_t span = (cloud->width - cloud->height) / 4;
+  uint8_t _i = 0;
+  int16_t y = 0;
+  int16_t y_end = (cloud->height) * mult;
+  while (y < y_end) {
+    uint8_t i = (cloud->height * y) / y_end;
+    int16_t x = span * i * mult;
+    int16_t x_end = (cloud->width - span * i) * mult;
+    while (x < x_end) {
+      uint8_t r1 = _random_background_shifts[_i] * 2;
+      uint8_t r2 = _random_background_shifts[_i + 1] / 2;
+      uint8_t r3 = _random_background_shifts[_i + 2] / 2;
+      _i = (_i + 3) % sizeof(_random_background_shifts);
+
+      x += r1;
+      struct Point point = {
+          .x = cloud->point.x + x + x_shift,
+          .y = cloud->point.y - y - y_shift + r3,
+      };
+      struct Circle circle = {
+          .p = point,
+          .d = size + r2,
+          .color = _branches_color,
+      };
+      image_draw_circle_threshold(image, &circle, treshold, _background_color);
+    }
+
+    y += _random_background_shifts[_i];
+    _i = (_i + 1) % sizeof(_random_background_shifts);
   }
+}
+
+static void _draw_background_cloud(struct Image *image, struct Cloud *cloud) {
+  const uint8_t mult = 24;
+  uint8_t span = (cloud->width - cloud->height) / 4;
+  for (uint8_t i = 0; i < cloud->height; i++) {
+    int16_t y = cloud->point.y - i * mult;
+    int16_t x_start = cloud->point.x + span * i * mult;
+    int16_t x_end = cloud->point.x + (cloud->width - span * i) * mult;
+    _draw_background_cloud_bar(image, x_start, x_end, y, 16, 12, 128 - 32);
+  }
+
+  _draw_background_cloud_fancy(image, cloud, 128 - 32, -4, -4, 12);
+  _draw_background_cloud_fancy(image, cloud, 128 + 64, 0, 0, 14);
+  _draw_background_cloud_fancy(image, cloud, 128, -4, -4, 8);
+  _draw_background_cloud_fancy(image, cloud, 128, 0, 0, 8);
 }
 
 static void _draw_background(struct Image *image) {
