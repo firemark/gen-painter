@@ -20,7 +20,7 @@ static uint16_t _grass_count;
 static uint16_t _clouds_count;
 
 static uint16_t _rain_density;
-static uint16_t _perlin;
+static uint16_t _temperature;
 
 static uint8_t _background_size;
 static uint8_t _background_shift;
@@ -179,13 +179,20 @@ static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
   _tree(n - 1, tree, side_left, w_left, rot + _random(-125, 125) - new_rot);
 }
 
-// static void _rain(struct Image *image) {
-//   for (uint16_t i = 0; i < _rain_density; i++) {
-//     struct Point p = {image->offset.x + _random_int(IMAGE_WIDTH),
-//                       image->offset.y + _random_int(IMAGE_HEIGHT)};
-//     image_paste_bitmap(image, &EXAMPLE, _leaves_color, p);
-//   }
-// }
+static void _rain(struct Image *image) {
+  for (uint16_t i = 0; i < _rain_density; i++) {
+    struct Point p0 = {image->offset.x + _random_int(IMAGE_WIDTH),
+                       image->offset.y + _random_int(IMAGE_HEIGHT)};
+    struct Point p1 = {p0.x - 8, p0.y + 8};
+    struct Line line = {
+        .p0 = p0,
+        .p1 = p1,
+        .thickness = 1,
+        .color = _branches_color,
+    };
+    image_draw_line(image, &line);
+  }
+}
 
 static void _random_colors(void) {
   switch (_random_int(4)) {
@@ -408,21 +415,15 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
       (_background_shifts_index + 4) % sizeof(_random_background_shifts);
 
   struct Cloud cloud0 = {
-      .point =
-          (struct Point){
-              .x = cloud->width * 12 + cloud->point.x + r0x * 2,
-              .y = cloud->height * 12 + cloud->point.y + r0y * 2,
-          },
+      .point = {.x = cloud->width * 12 + cloud->point.x + r0x * 2,
+                .y = cloud->height * 12 + cloud->point.y + r0y * 2},
       .width = cloud->width / 2,
       .height = cloud->height / 2,
   };
 
   struct Cloud cloud1 = {
-      .point =
-          (struct Point){
-              .x = cloud->width * 12 + cloud->point.x + r1x * 2,
-              .y = cloud->height * 12 + cloud->point.y + r1y * 2,
-          },
+      .point = {.x = cloud->width * 12 + cloud->point.x + r1x * 2,
+                .y = cloud->height * 12 + cloud->point.y + r1y * 2},
       .width = cloud->width / 2,
       .height = cloud->height / 2,
   };
@@ -431,6 +432,49 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
   _draw_background_cloud(image, &cloud1, step + 1);
 
   // _draw_background_cloud_fancy(image, cloud, 128, 0, 0, 8);
+}
+
+static void _draw_digit(struct Image *image, uint8_t digit) {
+  struct Point points[8];
+  uint8_t points_size = 0;
+
+  switch (digit) {
+  case 0:
+    points_size = 5;
+    points[0] = (struct Point){.x = 0, .y = 0};
+    points[1] = (struct Point){.x = 0, .y = 64};
+    points[2] = (struct Point){.x = 32, .y = 64};
+    points[3] = (struct Point){.x = 32, .y = 0};
+    points[4] = (struct Point){.x = 0, .y = 0};
+    break;
+  case 1:
+    points_size = 3;
+    points[0] = (struct Point){.x = 16, .y = 64};
+    points[1] = (struct Point){.x = 16, .y = 0};
+    points[2] = (struct Point){.x = 0, .y = 16};
+    break;
+  case 2:
+  case 3:
+  case 4:
+  case 5:
+  case 6:
+  case 7:
+  case 8:
+  case 9:
+    break;
+  }
+
+  for (uint8_t i = 1; i < points_size; i++) {
+    struct Point *a = &points[i - 1];
+    struct Point *b = &points[i];
+    struct Line line = {
+        .p0 = {.x = 8 + image->offset.x + a->x, .y = 8 + image->offset.y + a->y},
+        .p1 = {.x = 8 + image->offset.x + b->x, .y = 8 + image->offset.y + b->y},
+        .thickness = 5,
+        .color = _branches_color,
+    };
+    image_draw_line(image, &line);
+  }
 }
 
 static void _draw_background(struct Image *image) {
@@ -454,7 +498,7 @@ void art_init(void) {
   _clouds = malloc(sizeof(struct Cloud) * CLOUDS_SIZE);
 }
 
-void art_make(void) {
+void art_make(int16_t temperature) {
   _reset();
   _random_colors();
   _generate_tree();
@@ -466,7 +510,7 @@ void art_make(void) {
   _rain_density = _random_int(512);
   _background_size = 48 + _random_int(32);
   _background_shift = _random_int(16);
-  _perlin = _random_int(0xFF00);
+  _temperature = temperature;
 
   printf("total branches: %d\n", _branches_count);
   printf("total leafes: %d\n", _leafes_count);
@@ -476,7 +520,7 @@ void art_make(void) {
 void art_draw(struct Image *image) {
   image_clear(image, _background_color);
   // _grid(image);
-  // _rain(image);
+  _rain(image);
   // image_perlin(image, _branches_color, _perlin, 0.005);
   _draw_background(image);
 
@@ -526,4 +570,6 @@ void art_draw(struct Image *image) {
       image_draw_circle(image, &circle);
     }
   }
+
+  _draw_digit(image, 1);
 }

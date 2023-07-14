@@ -42,7 +42,7 @@ SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
 void core(SDL_Surface *screen_surface) {
   struct Image image = {.offset.x = 0, .offset.y = 0};
 
-  art_make();
+  art_make(10);
 
   uint16_t W[2] = {648, 656};
   uint16_t H[2] = {492, 492};

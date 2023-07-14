@@ -31,7 +31,7 @@ void setup() {
   printf("NewImage \r\n");
 
   art_init();
-  art_make();
+  art_make(10);
   draw_to_screen();
 
   EPD_12in48B_TurnOnDisplay();
