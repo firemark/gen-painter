@@ -20,7 +20,7 @@ static uint16_t _grass_count;
 static uint16_t _clouds_count;
 
 static uint16_t _rain_density;
-static uint16_t _temperature;
+static int16_t _temperature;
 
 static uint8_t _background_size;
 static uint8_t _background_shift;
@@ -451,10 +451,10 @@ static int16_t _draw_digit(struct Image *image, struct Point *p,
     break;
   case 1:
     points_size = 3;
+    shift = 30;
     points[0] = (struct Point){.x = 16, .y = 64};
     points[1] = (struct Point){.x = 16, .y = 0};
     points[2] = (struct Point){.x = 0, .y = 16};
-    shift = 30;
     break;
   case 2:
     points_size = 5;
@@ -532,7 +532,6 @@ static int16_t _draw_digit(struct Image *image, struct Point *p,
     break;
   case 'o':
     points_size = 5;
-    shift = 24;
     points[0] = (struct Point){.x = 0, .y = 0};
     points[1] = (struct Point){.x = 0, .y = 16};
     points[2] = (struct Point){.x = 16, .y = 16};
@@ -687,25 +686,23 @@ void art_draw(struct Image *image) {
     }
   }
 
-  int16_t shift = 8;
-  for (uint8_t d = 0; d <= 9; d++) {
-    struct Point p = {shift, 8};
-    shift += _draw_digit(image, &p, d);
-  }
+  image_draw_rectangle(image, _branches_color, 128, (struct Point){0, 0},
+                       (struct Point){280, 120});
+  image_draw_rectangle(image, _background_color, 128, (struct Point){4, 4},
+                       (struct Point){280 - 4, 120 - 4});
+
   {
-    struct Point p = {shift, 8};
-    shift += _draw_digit(image, &p, 'o');
-  }
-  {
-    struct Point p = {shift, 8};
-    shift += _draw_digit(image, &p, '-');
-  }
-  {
-    struct Point p = {shift, 8};
-    shift += _draw_digit(image, &p, '+');
-  }
-  {
-    struct Point p = {shift, 8};
-    shift += _draw_digit(image, &p, ',');
+    struct Point p = {240, 32};
+    uint16_t temperature = abs(_temperature);
+
+    p.x -= _draw_digit(image, &p, 'o');
+    do {
+      uint8_t digit = temperature % 10;
+      p.x -= _draw_digit(image, &p, digit);
+      temperature /= 10;
+    } while (temperature > 0);
+    if (_temperature < 0) {
+      p.x -= _draw_digit(image, &p, '-');
+    }
   }
 }
