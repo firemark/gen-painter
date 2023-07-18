@@ -3,4 +3,5 @@
 *.hex
 *.map
 .vscode
+keys.h
 sdl

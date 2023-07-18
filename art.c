@@ -613,7 +613,7 @@ void art_init(void) {
   _clouds = malloc(sizeof(struct Cloud) * CLOUDS_SIZE);
 }
 
-void art_make(int16_t temperature) {
+void art_make(int16_t temperature, uint16_t rain_density) {
   _reset();
   _random_colors();
   _generate_tree();
@@ -622,7 +622,7 @@ void art_make(int16_t temperature) {
   _generate_grass(FULL_IMAGE_HEIGHT - 20);
   _generate_grass(FULL_IMAGE_HEIGHT - 40);
   _generate_grass(FULL_IMAGE_HEIGHT - 60);
-  _rain_density = _random_int(512);
+  _rain_density = rain_density;
   _background_size = 48 + _random_int(32);
   _background_shift = _random_int(16);
   _temperature = temperature;
