@@ -52,33 +52,49 @@ void setup() {
 
 void loop() {
   printf("Settings time\r\n");
-  setenv("TZ", TIMEZONE, 1);
-  tzset();
-  sntp_setservername(0, "pool.ntp.org");
+
   sntp_init();
+  sntp_setservername(0, "pool.ntp.org");
 
   sntp_sync_status_t sntp_sync;
   uint8_t count = 0;
   do {
-    delay(500);
+    delay(100);
     sntp_sync = sntp_get_sync_status();
-    if (count++ < 5) {
+    if (count++ > 50) {
       break;
     }
   } while (sntp_sync != SNTP_SYNC_STATUS_COMPLETED);
 
   if (sntp_sync != SNTP_SYNC_STATUS_COMPLETED) {
-    printf("Failed to update system time\r\n");
+    printf("Failed to update system time, ");
+    switch (sntp_sync) {
+    case SNTP_SYNC_STATUS_RESET:
+      printf("State: SNTP_SYNC_STATUS_RESET\r\n");
+      break;
+    case SNTP_SYNC_STATUS_IN_PROGRESS:
+      printf("State: SNTP_SYNC_STATUS_IN_PROGRESS\r\n");
+      break;
+    default:
+      printf("State: ???\r\n");
+      break;
+    }
     EPD_12in48B_Clear();
     finish();
   }
 
-  printf("Check day\r\n");
+  printf("Set timezone: %s \r\n", TIMEZONE);
+  setenv("TZ", TIMEZONE, 1);
+  tzset();
+
+  printf("Check time: ");
   time_t now;
   struct tm timeinfo;
 
   time(&now);
   localtime_r(&now, &timeinfo);
+  printf("%02d:%02d:%02d\r\n", timeinfo.tm_hour, timeinfo.tm_min,
+         timeinfo.tm_sec);
   if (timeinfo.tm_hour < 6) {
     printf("Screen doesn't work during midnight!\r\n");
     finish();
@@ -90,6 +106,8 @@ void loop() {
     EPD_12in48B_Clear();
     finish();
   }
+
+  printf("Current Weather: %dC\r\n", weather_data.temperature);
 
   printf("Make the art\r\n");
   art_make(weather_data.temperature, 32);
@@ -106,9 +124,10 @@ void loop() {
 static void finish(void) {
   printf("Screen sleep\r\n");
   EPD_12in48B_Sleep();
+  sntp_stop();
 
   printf("CPU sleep\r\n");
-  esp_sleep_enable_timer_wakeup(3600L * 1000000L); // 1 hour
+  esp_sleep_enable_timer_wakeup(3600000000L); // 1 hour
   esp_deep_sleep_start();
 }
 
@@ -125,8 +144,8 @@ static String http_get(const std::string &uri) {
 
   String payload = "{}";
 
-  if (httpResponseCode > 0) {
-    printf("HTTP Response code: %d", httpResponseCode);
+  if (httpResponseCode >= 200 && httpResponseCode < 300) {
+    printf("HTTP Response code: %d\r\n", httpResponseCode);
     payload = http.getString();
   } else {
     printf("Error code: %d\n", httpResponseCode);
@@ -138,7 +157,6 @@ static String http_get(const std::string &uri) {
 }
 
 static bool download_weather_data(void) {
-  return false;
   // https://randomnerdtutorials.com/esp32-http-get-open-weather-map-thingspeak-arduino/
   std::string uri =
       "http://api.openweathermap.org/data/2.5/weather?units=metric&q=";
