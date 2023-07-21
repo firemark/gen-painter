@@ -86,9 +86,11 @@ static void _draw_background_bar(struct Image *image, int16_t y,
   int16_t x = 0;
   while (x < FULL_IMAGE_WIDTH) {
     int8_t r0 = _random_background_shifts[_background_shifts_index];
-    int8_t r1 = _random_background_shifts[_background_shifts_index + 1];
     _background_shifts_index =
-        (_background_shifts_index + 2) % sizeof(_random_background_shifts);
+        (_background_shifts_index + 1) % sizeof(_random_background_shifts);
+    int8_t r1 = _random_background_shifts[_background_shifts_index];
+    _background_shifts_index =
+        (_background_shifts_index + 1) % sizeof(_random_background_shifts);
     x += _background_size / 2 + r0;
     struct Point point = {x, y + r1};
     struct Circle circle = {

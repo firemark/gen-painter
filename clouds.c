@@ -88,9 +88,11 @@ static void _draw_background_cloud_fancy(struct Image *image,
     int16_t x_end = (cloud->width - span * i) * mult;
     while (x < x_end) {
       uint8_t r1 = _random_background_shifts[_i] + 1;
-      uint8_t r2 = _random_background_shifts[_i + 1] / 2;
-      uint8_t r3 = _random_background_shifts[_i + 2] / 2;
-      _i = (_i + 3) % sizeof(_random_background_shifts);
+      _i = (_i + 1) % sizeof(_random_background_shifts);
+      uint8_t r2 = _random_background_shifts[_i] / 2;
+      _i = (_i + 1) % sizeof(_random_background_shifts);
+      uint8_t r3 = _random_background_shifts[_i] / 2;
+      _i = (_i + 1) % sizeof(_random_background_shifts);
       x += r1;
 
       struct Point point = {
@@ -137,12 +139,19 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
   _draw_background_cloud_fancy(image, cloud, 128, 0, 0, 2);
   _draw_background_cloud_fancy(image, cloud, 128, -2, -2, 2);
 
+  // TODO: UGLY! fix this
   int8_t r0x = 16 - _random_background_shifts[_background_shifts_index];
-  int8_t r0y = 16 - _random_background_shifts[_background_shifts_index + 1];
-  int8_t r1x = 16 - _random_background_shifts[_background_shifts_index + 2];
-  int8_t r1y = 16 - _random_background_shifts[_background_shifts_index + 3];
   _background_shifts_index =
-      (_background_shifts_index + 4) % sizeof(_random_background_shifts);
+      (_background_shifts_index + 1) % sizeof(_random_background_shifts);
+  int8_t r0y = 16 - _random_background_shifts[_background_shifts_index];
+  _background_shifts_index =
+      (_background_shifts_index + 1) % sizeof(_random_background_shifts);
+  int8_t r1x = 16 - _random_background_shifts[_background_shifts_index];
+  _background_shifts_index =
+      (_background_shifts_index + 1) % sizeof(_random_background_shifts);
+  int8_t r1y = 16 - _random_background_shifts[_background_shifts_index];
+  _background_shifts_index =
+      (_background_shifts_index + 1) % sizeof(_random_background_shifts);
 
   struct Cloud cloud0 = {
       .point = {.x = cloud->width * 12 + cloud->point.x + r0x * 2,
