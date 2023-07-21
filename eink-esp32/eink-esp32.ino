@@ -19,6 +19,9 @@ int Version = 1;
 static bool download_weather_data(void);
 static void draw_to_screen(void);
 static void finish(void);
+static bool connect_wifi(void);
+static bool sync_time(void);
+static bool check_time(void);
 static void draw_S1(struct Image *image);
 static void draw_M1(struct Image *image);
 static void draw_S2(struct Image *image);
@@ -33,30 +36,85 @@ struct WeatherData {
 void setup() {
   DEV_ModuleInit();
 
+  printf("Art Init\r\n");
+  art_init();
+
   printf("Screen init\r\n");
   EPD_12in48B_Init();
-
-  printf("Wifi Init");
-  DEV_TestLED();
-  WiFi.begin(SSID, PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    printf(".");
-  }
-  printf("\r\n");
-
-  printf("Art Init\r\n");
-  DEV_TestLED();
-  art_init();
 }
 
 void loop() {
-  printf("Settings time\r\n");
+  if (!check_time()) {
+    return finish();
+  }
+
+  printf("Download weather data\r\n");
+  if (!download_weather_data()) {
+    printf("Something with downloading is wrong...\r\n");
+    return finish();
+  }
+
+  printf("Current Weather: %dC\r\n", weather_data.temperature);
+
+  printf("Make the art\r\n");
+  art_make(weather_data.temperature, 32);
+
+  printf("Screen fill with the art\r\n");
+  draw_to_screen();
+
+  printf("Screen display\r\n");
+  EPD_12in48B_TurnOnDisplay();
+
+  finish();
+}
+
+static void finish(void) {
+  printf("Screen sleep\r\n");
+  EPD_12in48B_Sleep();
+
+  printf("CPU sleep\r\n");
+  esp_sleep_enable_timer_wakeup(3600000000L); // 1 hour
+  esp_deep_sleep_start();
+}
+
+static bool connect_wifi(void) {
+  if (WiFi.status() == WL_CONNECTED) {
+    return true;
+  }
+  printf("Init Wifi");
+  WiFi.begin(SSID, PASSWORD);
+  uint16_t count = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    printf(".");
+    if (count++ > 300) {
+      printf(" failed.\r\n");
+      return false;
+    }
+  }
+  printf(" connected!\r\n");
+  return true;
+}
+
+static bool sync_time(void) {
+  sntp_sync_status_t sntp_sync = sntp_get_sync_status();
+  if (sntp_sync == SNTP_SYNC_STATUS_COMPLETED) {
+    return true;
+  }
+
+  if (!connect_wifi()) {
+    return false;
+  }
+
+  printf("Synchronize time\r\n");
 
   sntp_init();
+  // 24 hours, I don't need smooth synchronization because 
+  // I need only is to get current hour.
+  sntp_set_sync_interval(86400000L);
+  sntp_restart();
   sntp_setservername(0, "pool.ntp.org");
 
-  sntp_sync_status_t sntp_sync;
   uint8_t count = 0;
   do {
     delay(100);
@@ -79,13 +137,19 @@ void loop() {
       printf("State: ???\r\n");
       break;
     }
-    EPD_12in48B_Clear();
-    finish();
+    return false;
   }
 
-  printf("Set timezone: %s \r\n", TIMEZONE);
+  printf("Set timezone: %s\r\n", TIMEZONE);
   setenv("TZ", TIMEZONE, 1);
   tzset();
+  return true;
+};
+
+static bool check_time() {
+  if (!sync_time()) {
+    return false;
+  }
 
   printf("Check time: ");
   time_t now;
@@ -95,44 +159,21 @@ void loop() {
   localtime_r(&now, &timeinfo);
   printf("%02d:%02d:%02d\r\n", timeinfo.tm_hour, timeinfo.tm_min,
          timeinfo.tm_sec);
+
   if (timeinfo.tm_hour < 6) {
     printf("Screen doesn't work during midnight!\r\n");
-    finish();
+    return false;
   }
 
-  printf("Download weather data\r\n");
-  if (!download_weather_data()) {
-    printf("Something with downloading is wrong...\r\n");
-    EPD_12in48B_Clear();
-    finish();
-  }
-
-  printf("Current Weather: %dC\r\n", weather_data.temperature);
-
-  printf("Make the art\r\n");
-  art_make(weather_data.temperature, 32);
-
-  printf("Screen fill with the art\r\n");
-  draw_to_screen();
-
-  printf("Screen display\r\n");
-  EPD_12in48B_TurnOnDisplay();
-
-  finish();
-}
-
-static void finish(void) {
-  printf("Screen sleep\r\n");
-  EPD_12in48B_Sleep();
-  sntp_stop();
-
-  printf("CPU sleep\r\n");
-  esp_sleep_enable_timer_wakeup(3600000000L); // 1 hour
-  esp_deep_sleep_start();
+  return true;
 }
 
 static String http_get(const std::string &uri) {
   // https://randomnerdtutorials.com/esp32-http-get-open-weather-map-thingspeak-arduino/
+  if (!connect_wifi()) {
+    return "{}";
+  }
+
   WiFiClient client;
   HTTPClient http;
 

@@ -1,188 +1,34 @@
 #include "art.h"
-#include "image.h"
-#include "perlin.h"
+#include "forecast.h"
+#include "random.h"
+#include "tree.h"
+#include "clouds.h"
+#include "grass.h"
 
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define BRANCHES_SIZE (1024 * 2)
-#define LEAFES_SIZE 1024
-#define GRASS_SIZE (1024 * 2)
-#define CLOUDS_SIZE 8
-#define BEZIER_LINES_HIGH 16
-#define BEZIER_LINES_LOW 6
-
-static uint16_t _branches_count;
-static uint16_t _leafes_count;
-static uint16_t _grass_count;
-static uint16_t _clouds_count;
+#include "_share.h"
 
 static uint16_t _rain_density;
-static int16_t _temperature;
 
 static uint8_t _background_size;
 static uint8_t _background_shift;
-static int8_t _random_background_shifts[64];
-static uint8_t _background_shifts_index;
 
-static enum Color _background_color;
-static enum Color _leaves_color;
-static enum Color _branches_color;
+int8_t _random_background_shifts[64];
+uint8_t _background_shifts_index;
+int16_t _temperature;
 
-struct LineZ {
-  struct Line line;
-  uint8_t zdepth;
-};
-
-struct Cloud {
-  struct Point point;
-  uint8_t width;
-  uint8_t height;
-};
-
-static struct Line *_branches;
-static struct LineZ *_grass;
-static struct Circle *_leafes;
-static struct Cloud *_clouds;
-
-struct Tree {
-  float main_branch_ratio;
-  float side_branch_ratio;
-  float curvy_ratio;
-  uint8_t top_start;
-  float top_rot;
-  float bottom_rot;
-};
-
-static inline float _random(int16_t start, int16_t end) {
-  return (start + (int16_t)(art_random() % (end - start))) / 1000.0;
-}
-
-static inline int16_t _random_int(int16_t x) { return art_random() % x; }
-
-static inline float _thickness(int16_t w) { return w * w / 2048.0 + 1.0; }
-static inline float _lerp(int16_t x0, int16_t x1, float t) {
-  return x0 * (1.0 - t) + x1 * t;
-}
-
-static void _leaf(struct Point p, uint16_t size) {
-  if (_leafes_count >= LEAFES_SIZE) {
-    return;
-  }
-
-  _leafes[_leafes_count++] = (struct Circle){
-      .color = _leaves_color,
-      .d = size,
-      .p = p,
-  };
-}
-
-static struct Point _bezier(float t, struct Point b[4]) {
-  struct Point p;
-  float t_inv = 1 - t;
-  float tt = t * t;
-  float ttt = tt * t;
-  float tt_inv = t_inv * t_inv;
-  float ttt_inv = tt_inv * t_inv;
-  float t_tt_inv = t * tt_inv;
-  float tt_t_inv = tt * t_inv;
-
-  p.x = b[0].x * ttt_inv + 3 * b[1].x * t_tt_inv + 3 * b[2].x * tt_t_inv +
-        b[3].x * ttt;
-  p.y = b[0].y * ttt_inv + 3 * b[1].y * t_tt_inv + 3 * b[2].y * tt_t_inv +
-        b[3].y * ttt;
-
-  return p;
-}
-
-static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
-                  float rot) {
-  if (n < tree->top_start && _random_int(100) > n * 8) {
-    _leaf(p, w / 20 + _random_int(5));
-  }
-
-  uint16_t chunks = w > 100 ? BEZIER_LINES_HIGH : BEZIER_LINES_LOW;
-  if (n == 0 || _branches_count >= BRANCHES_SIZE - chunks) {
-    return;
-  }
-
-  if (n > tree->top_start && _random_int(100) > 70 + n * 5) {
-    return;
-  }
-
-  struct Point points[4];
-  points[0] = p;
-
-  float _sin = sin(rot);
-  float _cos = cos(rot);
-
-  float r1 = _random(200, 500);
-  float r2 = r1 + _random(200, 500);
-
-  float dx1 = w * r1;
-  float dy1 = tree->curvy_ratio * w * _random(-1000, +1000);
-  points[1] = (struct Point){
-      p.x + dx1 * _sin - dy1 * _cos,
-      p.y - dx1 * _cos - dy1 * _sin,
-  };
-
-  float dx2 = w * r2;
-  float dy2 = tree->curvy_ratio * w * _random(-1000, +1000);
-  points[2] = (struct Point){
-      p.x + dx2 * _sin - dy2 * _cos,
-      p.y - dx2 * _cos - dy2 * _sin,
-  };
-
-  points[3] = (struct Point){
-      p.x + w * _sin,
-      p.y - w * _cos,
-  };
-
-  struct Point old_p = p;
-
-  int16_t new_w = w * (tree->main_branch_ratio + _random(-125, 125));
-
-  for (uint8_t i = 1; i < chunks - 1; i++) {
-    float t = (float)i / chunks;
-    struct Point new_p = _bezier(t, points);
-    float part_w = _lerp(w, new_w, t);
-    _branches[_branches_count++] = (struct Line){
-        .color = _branches_color,
-        .thickness = _thickness(part_w),
-        .p0 = old_p,
-        .p1 = new_p,
-    };
-    old_p = new_p;
-  }
-
-  _branches[_branches_count++] = (struct Line){
-      .color = _branches_color,
-      .thickness = _thickness(new_w),
-      .p0 = old_p,
-      .p1 = points[3],
-  };
-
-  _tree(n - 1, tree, points[3], new_w, rot + _random(-125, 125));
-
-  float new_rot = n > tree->top_start ? tree->top_rot : tree->bottom_rot;
-
-  float split_right = _random(200, 800);
-  struct Point side_right = _bezier(split_right, points);
-  float w_right = _lerp(w, new_w, split_right) * tree->side_branch_ratio;
-  _tree(n - 1, tree, side_right, w_right, rot + _random(-125, 125) + new_rot);
-
-  float split_left = _random(200, 800);
-  struct Point side_left = _bezier(split_left, points);
-  float w_left = _lerp(w, new_w, split_left) * tree->side_branch_ratio;
-  _tree(n - 1, tree, side_left, w_left, rot + _random(-125, 125) - new_rot);
-}
+enum Color _background_color;
+enum Color _leaves_color;
+enum Color _branches_color;
 
 static void _rain(struct Image *image) {
   for (uint16_t i = 0; i < _rain_density; i++) {
-    struct Point p0 = {image->offset.x + _random_int(IMAGE_WIDTH),
-                       image->offset.y + _random_int(IMAGE_HEIGHT)};
+    struct Point p0 = {image->offset.x + random_int(IMAGE_WIDTH),
+                       image->offset.y + random_int(IMAGE_HEIGHT)};
     struct Point p1 = {p0.x - 8, p0.y + 8};
     struct Line line = {
         .p0 = p0,
@@ -195,7 +41,7 @@ static void _rain(struct Image *image) {
 }
 
 static void _random_colors(void) {
-  switch (_random_int(4)) {
+  switch (random_int(4)) {
   case 0: // Day
     _background_color = WHITE;
     _leaves_color = RED;
@@ -219,86 +65,20 @@ static void _random_colors(void) {
   }
 }
 
-static void _generate_grass(int16_t y) {
-  int16_t x = 0;
-  while (x < FULL_IMAGE_WIDTH && _grass_count < GRASS_SIZE - 4) {
-    int16_t yy = y - 16 + _random_int(32);
-    x += 10 - 3 + _random_int(6);
-    int16_t r = -40 + _random_int(80);
-    struct Point points[4] = {
-        {x, yy},
-        {x - 5 - r / 4, yy - 20 + _random_int(5)},
-        {x - 5 + r / 2, yy - 40 + _random_int(5)},
-        {x - 5 + r, yy - 50 + _random_int(5)},
-    };
-    for (uint8_t i = 0; i < 3; i++) {
-      _grass[_grass_count++] = (struct LineZ){
-          .line =
-              (struct Line){
-                  .color = _leaves_color,
-                  .thickness = 6 - 2 * i,
-                  .p0 = points[i],
-                  .p1 = points[i + 1],
-              },
-          .zdepth = _random_int(255),
-      };
-    }
-  }
-}
-
-static void _generate_clouds(void) {
-  // _clouds_count = 1;
-  // _clouds[0] = (struct Cloud){
-  //     .point =
-  //         {
-  //             .x = 100,
-  //             .y = 200,
-  //         },
-  //     .size = 8 + _random_int(8),
-  // };
-  // return;
-  _clouds_count = _random_int(8);
-  for (uint8_t i = 0; i < _clouds_count; i++) {
-    _clouds[i] = (struct Cloud){
-        .point =
-            {
-                .x = _random_int(FULL_IMAGE_WIDTH),
-                .y = _random_int(500),
-            },
-        .width = 8 + _random_int(8),
-        .height = 4 + _random_int(3),
-    };
-  }
-}
-
-static void _generate_tree(void) {
-  struct Point p = {
-      FULL_IMAGE_WIDTH / 2 + _random_int(200) - 100,
-      FULL_IMAGE_HEIGHT - 60,
-  };
-  uint16_t w = 200 + _random_int(50);
-  float rot = _random(-50, 50);
-
-  struct Tree tree = {
-      .main_branch_ratio = _random(600, 900),
-      .side_branch_ratio = _random(500, 800),
-      .curvy_ratio = _random(0, 1000),
-      .top_start = 2 + _random_int(2),
-      .top_rot = _random(300, 900),
-      .bottom_rot = _random(100, 400),
-  };
-  _tree(6, &tree, p, w, rot);
-}
-
 static void _reset(void) {
-  _branches_count = 0;
-  _leafes_count = 0;
-  _grass_count = 0;
-  _clouds_count = 0;
+  tree_reset();
+  grass_reset();
+  clouds_reset();
 
   for (uint8_t i = 0; i < sizeof(_random_background_shifts); i++) {
-    _random_background_shifts[i] = _random_int(32);
+    _random_background_shifts[i] = random_int(32);
   }
+}
+
+void art_init(void) {
+  tree_init();
+  clouds_init();
+  grass_init();
 }
 
 static void _draw_background_bar(struct Image *image, int16_t y,
@@ -320,285 +100,12 @@ static void _draw_background_bar(struct Image *image, int16_t y,
   }
 }
 
-static void _draw_background_cloud_bar(struct Image *image, int16_t x_start,
-                                       int16_t x_end, int16_t y, uint8_t width,
-                                       uint8_t size, uint8_t threshold) {
-  int16_t x = x_start;
-  while (x < x_end) {
-    int8_t r0 = _random_background_shifts[_background_shifts_index] / 2;
-    int8_t r1 = _random_background_shifts[_background_shifts_index + 1] / 2;
-    _background_shifts_index =
-        (_background_shifts_index + 2) % sizeof(_random_background_shifts);
-    x += size / 2 + r0;
-    struct Point point = {x, y + r1};
-    struct Circle circle = {
-        .p = point,
-        .d = size,
-        .color = WHITE,
-    };
-
-    image_draw_circle_threshold(image, &circle, threshold,
-                                _background_color == WHITE ? BLACK
-                                                           : _background_color);
-  }
-}
-
-static void _draw_background_cloud_fancy(struct Image *image,
-                                         struct Cloud *cloud, uint8_t treshold,
-                                         int16_t x_shift, int16_t y_shift,
-                                         uint8_t size) {
-  const uint8_t mult = 24;
-  uint8_t span = (cloud->width - cloud->height) / 4;
-  uint8_t _i = 0;
-  int16_t y = 0;
-  int16_t y_end = (cloud->height) * mult;
-  while (y < y_end) {
-    uint8_t i = (cloud->height * y) / y_end;
-    int16_t x = span * i * mult;
-    int16_t x_end = (cloud->width - span * i) * mult;
-    while (x < x_end) {
-      uint8_t r1 = _random_background_shifts[_i] + 1;
-      uint8_t r2 = _random_background_shifts[_i + 1] / 2;
-      uint8_t r3 = _random_background_shifts[_i + 2] / 2;
-      _i = (_i + 3) % sizeof(_random_background_shifts);
-      x += r1;
-
-      struct Point point = {
-          .x = cloud->point.x + x + x_shift,
-          .y = cloud->point.y - y - y_shift + r3,
-      };
-      struct Circle circle = {
-          .p = point,
-          .d = size + r2,
-          .color = WHITE,
-      };
-      image_draw_circle_threshold(
-          image, &circle, treshold,
-          _background_color == WHITE ? BLACK : _background_color);
-    }
-
-    y += _random_background_shifts[_i] + 1;
-    _i = (_i + 1) % sizeof(_random_background_shifts);
-  }
-}
-
-static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
-                                   uint8_t step) {
-  const uint8_t mult = 24;
-  if (step == 0) {
-    uint8_t span = (cloud->width - cloud->height) / 4;
-    for (uint8_t i = 0; i < cloud->height; i++) {
-      int16_t y = cloud->point.y - i * mult;
-      int16_t x_start = cloud->point.x + span * i * mult;
-      int16_t x_end = cloud->point.x + (cloud->width - span * i) * mult;
-      _draw_background_cloud_bar(image, x_start, x_end, y, 16, 12, 128 - 16);
-    }
-  } else {
-    int8_t r0 = _random_background_shifts[_background_shifts_index];
-    _background_shifts_index =
-        (_background_shifts_index + 1) % sizeof(_random_background_shifts);
-    if (step > 2) {
-      return;
-    }
-  }
-
-  _draw_background_cloud_fancy(image, cloud, 128 - 16, -4, -4, 8);
-  _draw_background_cloud_fancy(image, cloud, 128 + 64, 2, 2, 6);
-  _draw_background_cloud_fancy(image, cloud, 128, 0, 0, 2);
-  _draw_background_cloud_fancy(image, cloud, 128, -2, -2, 2);
-
-  int8_t r0x = 16 - _random_background_shifts[_background_shifts_index];
-  int8_t r0y = 16 - _random_background_shifts[_background_shifts_index + 1];
-  int8_t r1x = 16 - _random_background_shifts[_background_shifts_index + 2];
-  int8_t r1y = 16 - _random_background_shifts[_background_shifts_index + 3];
-  _background_shifts_index =
-      (_background_shifts_index + 4) % sizeof(_random_background_shifts);
-
-  struct Cloud cloud0 = {
-      .point = {.x = cloud->width * 12 + cloud->point.x + r0x * 2,
-                .y = cloud->height * 12 + cloud->point.y + r0y * 2},
-      .width = cloud->width / 2,
-      .height = cloud->height / 2,
-  };
-
-  struct Cloud cloud1 = {
-      .point = {.x = cloud->width * 12 + cloud->point.x + r1x * 2,
-                .y = cloud->height * 12 + cloud->point.y + r1y * 2},
-      .width = cloud->width / 2,
-      .height = cloud->height / 2,
-  };
-
-  _draw_background_cloud(image, &cloud0, step + 1);
-  _draw_background_cloud(image, &cloud1, step + 1);
-
-  // _draw_background_cloud_fancy(image, cloud, 128, 0, 0, 8);
-}
-
-static int16_t _draw_digit(struct Image *image, struct Point *p,
-                           uint8_t digit) {
-  struct Point points[12];
-  uint8_t points_size = 0;
-  int16_t shift = 44;
-
-  switch (digit) {
-  case 0:
-    points_size = 5;
-    points[0] = (struct Point){.x = 0, .y = 0};
-    points[1] = (struct Point){.x = 0, .y = 64};
-    points[2] = (struct Point){.x = 32, .y = 64};
-    points[3] = (struct Point){.x = 32, .y = 0};
-    points[4] = (struct Point){.x = 0, .y = 0};
-    break;
-  case 1:
-    points_size = 3;
-    shift = 30;
-    points[0] = (struct Point){.x = 16, .y = 64};
-    points[1] = (struct Point){.x = 16, .y = 0};
-    points[2] = (struct Point){.x = 0, .y = 16};
-    break;
-  case 2:
-    points_size = 5;
-    points[0] = (struct Point){.x = 32, .y = 64};
-    points[1] = (struct Point){.x = 0, .y = 64};
-    points[2] = (struct Point){.x = 24, .y = 16};
-    points[3] = (struct Point){.x = 12, .y = 0};
-    points[4] = (struct Point){.x = 0, .y = 16};
-    break;
-  case 3:
-    points_size = 5;
-    points[0] = (struct Point){.x = 0, .y = 0};
-    points[1] = (struct Point){.x = 32, .y = 0};
-    points[2] = (struct Point){.x = 16, .y = 32};
-    points[3] = (struct Point){.x = 32, .y = 64};
-    points[4] = (struct Point){.x = 0, .y = 64};
-    break;
-  case 4:
-    points_size = 4;
-    points[0] = (struct Point){.x = 24, .y = 64};
-    points[1] = (struct Point){.x = 24, .y = 0};
-    points[2] = (struct Point){.x = 0, .y = 32};
-    points[3] = (struct Point){.x = 32, .y = 32};
-    break;
-  case 5:
-    points_size = 6;
-    points[0] = (struct Point){.x = 32, .y = 0};
-    points[1] = (struct Point){.x = 0, .y = 0};
-    points[2] = (struct Point){.x = 0, .y = 32};
-    points[3] = (struct Point){.x = 32, .y = 32};
-    points[4] = (struct Point){.x = 32, .y = 64};
-    points[5] = (struct Point){.x = 0, .y = 64};
-    break;
-  case 6:
-    points_size = 6;
-    points[0] = (struct Point){.x = 32, .y = 0};
-    points[1] = (struct Point){.x = 0, .y = 0};
-    points[2] = (struct Point){.x = 0, .y = 64};
-    points[3] = (struct Point){.x = 32, .y = 64};
-    points[4] = (struct Point){.x = 32, .y = 32};
-    points[5] = (struct Point){.x = 0, .y = 32};
-    break;
-  case 7:
-    points_size = 6;
-    points[0] = (struct Point){.x = 0, .y = 0};
-    points[1] = (struct Point){.x = 32, .y = 0};
-    points[2] = (struct Point){.x = 0, .y = 64};
-    points[3] = (struct Point){.x = 16, .y = 32};
-    points[4] = (struct Point){.x = 0, .y = 32};
-    points[5] = (struct Point){.x = 32, .y = 32};
-    break;
-  case 8:
-    points_size = 11;
-    shift = 36;
-    points[0] = (struct Point){.x = 12, .y = 0};
-    points[1] = (struct Point){.x = 24, .y = 8};
-    points[2] = (struct Point){.x = 24, .y = 24};
-    points[3] = (struct Point){.x = 0, .y = 40};
-    points[4] = (struct Point){.x = 0, .y = 56};
-    points[5] = (struct Point){.x = 12, .y = 64};
-    points[6] = (struct Point){.x = 24, .y = 56};
-    points[7] = (struct Point){.x = 24, .y = 40};
-    points[8] = (struct Point){.x = 0, .y = 24};
-    points[9] = (struct Point){.x = 0, .y = 8};
-    points[10] = (struct Point){.x = 12, .y = 0};
-    break;
-  case 9:
-    points_size = 6;
-    points[0] = (struct Point){.x = 0, .y = 64};
-    points[1] = (struct Point){.x = 32, .y = 64};
-    points[2] = (struct Point){.x = 32, .y = 0};
-    points[3] = (struct Point){.x = 0, .y = 0};
-    points[4] = (struct Point){.x = 0, .y = 32};
-    points[5] = (struct Point){.x = 32, .y = 32};
-    break;
-  case 'o':
-    points_size = 5;
-    points[0] = (struct Point){.x = 0, .y = 0};
-    points[1] = (struct Point){.x = 0, .y = 16};
-    points[2] = (struct Point){.x = 16, .y = 16};
-    points[3] = (struct Point){.x = 16, .y = 0};
-    points[4] = (struct Point){.x = 0, .y = 0};
-    break;
-  case '-':
-    points_size = 2;
-    shift = 32;
-    points[0] = (struct Point){.x = 0, .y = 32};
-    points[1] = (struct Point){.x = 16, .y = 32};
-    break;
-  case '+':
-    points_size = 5;
-    shift = 32;
-    points[0] = (struct Point){.x = 0, .y = 32};
-    points[1] = (struct Point){.x = 16, .y = 32};
-    points[2] = (struct Point){.x = 8, .y = 32};
-    points[3] = (struct Point){.x = 8, .y = 24};
-    points[4] = (struct Point){.x = 8, .y = 40};
-    break;
-  case ',':
-    points_size = 2;
-    shift = 8;
-    points[0] = (struct Point){.x = 4, .y = 60};
-    points[1] = (struct Point){.x = 4, .y = 68};
-    break;
-  default:
-    return 0;
-  }
-
-  uint8_t size = 6;
-
-  for (uint8_t i = 1; i < points_size; i++) {
-    struct Point *a = &points[i - 1];
-    struct Point *b = &points[i];
-    struct Line line = {
-        .p0 = {.x = p->x + a->x, .y = p->y + a->y},
-        .p1 = {.x = p->x + b->x, .y = p->y + b->y},
-        .thickness = size,
-        .color = _branches_color,
-    };
-    struct Circle cirlce = {
-        .p = {.x = p->x + b->x, .y = p->y + b->y},
-        .d = size / 2,
-        .color = _branches_color,
-    };
-    image_draw_line(image, &line);
-    image_draw_circle(image, &cirlce);
-  }
-
-  struct Circle cirlce = {
-      .p = {.x = p->x + points[0].x, .y = p->y + points[0].y},
-      .d = size / 2,
-      .color = _branches_color,
-  };
-  image_draw_circle(image, &cirlce);
-  return shift;
-}
 
 static void _draw_background(struct Image *image) {
   int16_t y = FULL_IMAGE_HEIGHT - 1 - _background_size + _background_shift;
   _background_shifts_index = 0;
 
-  for (uint8_t i = 0; i < _clouds_count; i++) {
-    _draw_background_cloud(image, &_clouds[i], 0);
-  }
+  clouds_draw(image);
 
   _draw_background_bar(image, y - _background_size * 2, 96);
   _draw_background_bar(image, y - _background_size, 112);
@@ -606,103 +113,28 @@ static void _draw_background(struct Image *image) {
   _draw_background_bar(image, y, 160);
 }
 
-void art_init(void) {
-  _branches = malloc(sizeof(struct Line) * BRANCHES_SIZE);
-  _grass = malloc(sizeof(struct LineZ) * GRASS_SIZE);
-  _leafes = malloc(sizeof(struct Circle) * LEAFES_SIZE);
-  _clouds = malloc(sizeof(struct Cloud) * CLOUDS_SIZE);
-}
-
 void art_make(int16_t temperature, uint16_t rain_density) {
   _reset();
   _random_colors();
-  _generate_tree();
-  _generate_clouds();
-  _generate_grass(FULL_IMAGE_HEIGHT);
-  _generate_grass(FULL_IMAGE_HEIGHT - 20);
-  _generate_grass(FULL_IMAGE_HEIGHT - 40);
-  _generate_grass(FULL_IMAGE_HEIGHT - 60);
+  tree_generate();
+  grass_generate();
+  clouds_generate();
   _rain_density = rain_density;
-  _background_size = 48 + _random_int(32);
-  _background_shift = _random_int(16);
+  _background_size = 48 + random_int(32);
+  _background_shift = random_int(16);
   _temperature = temperature;
-
-  printf("total branches: %d\n", _branches_count);
-  printf("total leafes: %d\n", _leafes_count);
-  printf("total grass: %d\n", _grass_count);
 }
 
 void art_draw(struct Image *image) {
   image_clear(image, _background_color);
-  // _grid(image);
   _rain(image);
-  // image_perlin(image, _branches_color, _perlin, 0.005);
   _draw_background(image);
 
-  for (uint16_t i = 0; i < _leafes_count; i++) {
-    for (uint16_t j = 0; j < 3; j++) {
-      uint16_t dx = 16 - _random_int(32);
-      uint16_t dy = 16 - _random_int(32);
-      struct Circle circle = _leafes[i];
-      circle.p.x += dx;
-      circle.p.y += dy;
-      image_draw_circle(image, &circle);
-    }
-  }
+  tree_draw_back(image);
+  grass_draw_back(image);
+  tree_draw_branches(image);
+  grass_draw_front(image);
+  tree_draw_front(image);
 
-  for (uint16_t i = 0; i < _grass_count; i++) {
-    if (_grass[i].zdepth < 128) {
-      image_draw_line(image, &_grass[i].line);
-    }
-  }
-
-  for (uint16_t i = 0; i < _branches_count; i++) {
-    struct Line *line = &_branches[i];
-    image_draw_line(image, line);
-    if (line->thickness > 5) {
-      struct Circle circle = {
-          .color = line->color,
-          .d = line->thickness / 2,
-          .p = line->p1,
-      };
-      image_draw_circle(image, &circle);
-    }
-  }
-
-  for (uint16_t i = 0; i < _grass_count; i++) {
-    if (_grass[i].zdepth > 128) {
-      image_draw_line(image, &_grass[i].line);
-    }
-  }
-
-  for (uint16_t i = 0; i < _leafes_count; i++) {
-    for (uint16_t j = 0; j < 2; j++) {
-      uint16_t dx = 16 - (art_random() % 32);
-      uint16_t dy = 16 - (art_random() % 32);
-      struct Circle circle = _leafes[i];
-      circle.p.x += dx;
-      circle.p.y += dy;
-      image_draw_circle(image, &circle);
-    }
-  }
-
-  image_draw_rectangle(image, _branches_color, 128, (struct Point){0, 0},
-                       (struct Point){280, 120});
-  image_draw_rectangle(image, _background_color, 128, (struct Point){4, 4},
-                       (struct Point){280 - 4, 120 - 4});
-
-  {
-    struct Point p = {240, 32};
-    uint16_t temperature = abs(_temperature);
-
-    p.x -= _draw_digit(image, &p, 'o');
-    do {
-      uint8_t digit = temperature % 10;
-      p.x -= _draw_digit(image, &p, digit);
-      temperature /= 10;
-    } while (temperature > 0);
-    if (_temperature < 0) {
-      p.x -= _draw_digit(image, &p, '-');
-    }
-  }
+  forecast_draw(image);
 }
