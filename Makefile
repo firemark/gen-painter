@@ -7,7 +7,7 @@ DUDE_PORT = usb
 TARGET=main
 
 AVR_OBJS=epd.avr.o image.avr.o art.avr.o $(TARGET).avr.o
-SDL_OBJS=sdl.sdl.o image.sdl.o art.sdl.o forecast.sdl.o image_adv.sdl.o tree.sdl.o clouds.sdl.o grass.sdl.o
+SDL_OBJS=sdl.sdl.o image.sdl.o art.sdl.o forecast.sdl.o image_adv.sdl.o tree.sdl.o clouds.sdl.o grass.sdl.o landscape.sdl.o random.sdl.o
 
 OPTIMIZE = Os
 CC = avr-gcc

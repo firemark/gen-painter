@@ -4,6 +4,7 @@
 #include "tree.h"
 #include "clouds.h"
 #include "grass.h"
+#include "landscape.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -14,11 +15,6 @@
 
 static uint16_t _rain_density;
 
-static uint8_t _background_size;
-static uint8_t _background_shift;
-
-int8_t _random_background_shifts[64];
-uint8_t _background_shifts_index;
 int16_t _temperature;
 
 enum Color _background_color;
@@ -69,10 +65,7 @@ static void _reset(void) {
   tree_reset();
   grass_reset();
   clouds_reset();
-
-  for (uint8_t i = 0; i < sizeof(_random_background_shifts); i++) {
-    _random_background_shifts[i] = random_int(32);
-  }
+  random_shuffle_array();
 }
 
 void art_init(void) {
@@ -81,56 +74,23 @@ void art_init(void) {
   grass_init();
 }
 
-static void _draw_background_bar(struct Image *image, int16_t y,
-                                 uint8_t threshold) {
-  int16_t x = 0;
-  while (x < FULL_IMAGE_WIDTH) {
-    int8_t r0 = _random_background_shifts[_background_shifts_index];
-    _background_shifts_index =
-        (_background_shifts_index + 1) % sizeof(_random_background_shifts);
-    int8_t r1 = _random_background_shifts[_background_shifts_index];
-    _background_shifts_index =
-        (_background_shifts_index + 1) % sizeof(_random_background_shifts);
-    x += _background_size / 2 + r0;
-    struct Point point = {x, y + r1};
-    struct Circle circle = {
-        .p = point,
-        .d = _background_size,
-        .color = _branches_color,
-    };
-    image_draw_circle_threshold(image, &circle, threshold, _background_color);
-  }
-}
-
-
-static void _draw_background(struct Image *image) {
-  int16_t y = FULL_IMAGE_HEIGHT - 1 - _background_size + _background_shift;
-  _background_shifts_index = 0;
-
-  clouds_draw(image);
-
-  _draw_background_bar(image, y - _background_size * 2, 96);
-  _draw_background_bar(image, y - _background_size, 112);
-  _draw_background_bar(image, y - _background_size / 2, 128);
-  _draw_background_bar(image, y, 160);
-}
-
 void art_make(int16_t temperature, uint16_t rain_density) {
   _reset();
   _random_colors();
   tree_generate();
   grass_generate();
   clouds_generate();
+  landscape_generate();
   _rain_density = rain_density;
-  _background_size = 48 + random_int(32);
-  _background_shift = random_int(16);
   _temperature = temperature;
 }
 
 void art_draw(struct Image *image) {
   image_clear(image, _background_color);
+
   _rain(image);
-  _draw_background(image);
+  clouds_draw(image);
+  landscape_draw(image);
 
   tree_draw_back(image);
   grass_draw_back(image);

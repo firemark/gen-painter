@@ -14,6 +14,7 @@ struct Cloud {
 };
 
 static uint16_t _clouds_count;
+static uint8_t _i;
 
 static struct Cloud *_clouds;
 
@@ -45,6 +46,7 @@ void clouds_generate(void) {
 }
 
 void clouds_draw(struct Image *image) {
+  _i = 0;
   for (uint8_t i = 0; i < _clouds_count; i++) {
     _draw_background_cloud(image, &_clouds[i], 0);
   }
@@ -55,12 +57,8 @@ static void _draw_background_cloud_bar(struct Image *image, int16_t x_start,
                                        uint8_t size, uint8_t threshold) {
   int16_t x = x_start;
   while (x < x_end) {
-    int8_t r0 = _random_background_shifts[_background_shifts_index] / 2;
-    int8_t r1 = _random_background_shifts[_background_shifts_index + 1] / 2;
-    _background_shifts_index =
-        (_background_shifts_index + 2) % sizeof(_random_background_shifts);
-    x += size / 2 + r0;
-    struct Point point = {x, y + r1};
+    x += size / 2 + random_next(&_i) / 2;
+    struct Point point = {x, y + random_next(&_i) / 2};
     struct Circle circle = {
         .p = point,
         .d = size,
@@ -79,7 +77,7 @@ static void _draw_background_cloud_fancy(struct Image *image,
                                          uint8_t size) {
   const uint8_t mult = 24;
   uint8_t span = (cloud->width - cloud->height) / 4;
-  uint8_t _i = 0;
+  uint8_t _j = 0;
   int16_t y = 0;
   int16_t y_end = (cloud->height) * mult;
   while (y < y_end) {
@@ -87,21 +85,15 @@ static void _draw_background_cloud_fancy(struct Image *image,
     int16_t x = span * i * mult;
     int16_t x_end = (cloud->width - span * i) * mult;
     while (x < x_end) {
-      uint8_t r1 = _random_background_shifts[_i] + 1;
-      _i = (_i + 1) % sizeof(_random_background_shifts);
-      uint8_t r2 = _random_background_shifts[_i] / 2;
-      _i = (_i + 1) % sizeof(_random_background_shifts);
-      uint8_t r3 = _random_background_shifts[_i] / 2;
-      _i = (_i + 1) % sizeof(_random_background_shifts);
-      x += r1;
+      x += random_next(&_j) + 1;
 
       struct Point point = {
           .x = cloud->point.x + x + x_shift,
-          .y = cloud->point.y - y - y_shift + r3,
+          .y = cloud->point.y - y - y_shift + random_next(&_j) / 2,
       };
       struct Circle circle = {
           .p = point,
-          .d = size + r2,
+          .d = size + random_next(&_j) / 2,
           .color = WHITE,
       };
       image_draw_circle_threshold(
@@ -109,8 +101,7 @@ static void _draw_background_cloud_fancy(struct Image *image,
           _background_color == WHITE ? BLACK : _background_color);
     }
 
-    y += _random_background_shifts[_i] + 1;
-    _i = (_i + 1) % sizeof(_random_background_shifts);
+    y += random_next(&_j) + 1;
   }
 }
 
@@ -126,9 +117,6 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
       _draw_background_cloud_bar(image, x_start, x_end, y, 16, 12, 128 - 16);
     }
   } else {
-    int8_t r0 = _random_background_shifts[_background_shifts_index];
-    _background_shifts_index =
-        (_background_shifts_index + 1) % sizeof(_random_background_shifts);
     if (step > 2) {
       return;
     }
@@ -139,19 +127,10 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
   _draw_background_cloud_fancy(image, cloud, 128, 0, 0, 2);
   _draw_background_cloud_fancy(image, cloud, 128, -2, -2, 2);
 
-  // TODO: UGLY! fix this
-  int8_t r0x = 16 - _random_background_shifts[_background_shifts_index];
-  _background_shifts_index =
-      (_background_shifts_index + 1) % sizeof(_random_background_shifts);
-  int8_t r0y = 16 - _random_background_shifts[_background_shifts_index];
-  _background_shifts_index =
-      (_background_shifts_index + 1) % sizeof(_random_background_shifts);
-  int8_t r1x = 16 - _random_background_shifts[_background_shifts_index];
-  _background_shifts_index =
-      (_background_shifts_index + 1) % sizeof(_random_background_shifts);
-  int8_t r1y = 16 - _random_background_shifts[_background_shifts_index];
-  _background_shifts_index =
-      (_background_shifts_index + 1) % sizeof(_random_background_shifts);
+  int8_t r0x = 16 - random_next(&_i);
+  int8_t r0y = 16 - random_next(&_i);
+  int8_t r1x = 16 - random_next(&_i);
+  int8_t r1y = 16 - random_next(&_i);
 
   struct Cloud cloud0 = {
       .point = {.x = cloud->width * 12 + cloud->point.x + r0x * 2,
