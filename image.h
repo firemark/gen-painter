@@ -50,6 +50,9 @@ void image_draw_rectangle(struct Image *image, enum Color color, uint8_t thresho
 void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
                                  uint8_t threshold, enum Color background);
 
+void dithering_array_init(void);
+void dithering_array_random(void);
+
 static inline enum Color image_get(struct Image *image, uint16_t x,
                                    uint16_t y) {
   uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);

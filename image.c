@@ -1,5 +1,7 @@
 #include "image.h"
+#include "random.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 #define TO_FIXED_POINT(x) ((x) << 16)
 #define FROM_FIXED_POINT(x) ((x) >> 16)
@@ -410,6 +412,33 @@ static inline uint8_t _threshold(uint8_t threshold, uint16_t z) {
   }
 }
 
+static uint16_t *_dithering_array = NULL;
+
+void dithering_array_init(void) {
+  _dithering_array = malloc(128 * 128 * sizeof(uint16_t));
+}
+
+void dithering_array_random(void) {
+  for (uint8_t y = 0; y < 128; y++) {
+    for (uint8_t x = 0; x < 128; x++) {
+      uint16_t c = 0;
+      for (uint8_t i = 0; i < 16; i++) {
+        if ((random_int(8192) < ((8192 / 16) * i))) {
+          c |= (1 << i);
+        }
+      }
+      _dithering_array[y * 128 + x] = c;
+    }
+  }
+}
+
+static inline uint16_t _get_threshold_pixel(uint16_t x, uint16_t y,
+                                           uint8_t threshold) {
+  uint16_t index = (y % 128) * 128 + (x % 128);
+  uint16_t c = _dithering_array[index];
+  return (c >> (threshold / 16)) & 1;
+}
+
 void image_draw_rectangle(struct Image *image, enum Color color,
                           uint8_t threshold, struct Point p0, struct Point p1) {
   int16_t x0 = p0.x - image->offset.x;
@@ -464,17 +493,16 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
     if (x_max > x_min) {
       int16_t yy0 = y0 + y;
       int16_t yy1 = y0 - y;
-      uint16_t zz0 = yy0 * yy0;
-      uint16_t zz1 = yy1 * yy1;
       for (int16_t xx = x_min; xx <= x_max; xx++) {
-        uint16_t z0 = xx * xx + zz0;
-        uint16_t z1 = xx * xx + zz1;
-
         _image_set_pixel(image,
-                         _threshold(threshold, z0) ? circle->color : background,
+                         _get_threshold_pixel(xx, yy0, threshold)
+                             ? circle->color
+                             : background,
                          xx, yy0);
         _image_set_pixel(image,
-                         _threshold(threshold, z1) ? circle->color : background,
+                         _get_threshold_pixel(xx, yy1, threshold)
+                             ? circle->color
+                             : background,
                          xx, yy1);
       }
     }
@@ -482,17 +510,16 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
     if (y_max > y_min) {
       int16_t yy0 = y0 + x;
       int16_t yy1 = y0 - x;
-      uint16_t zz0 = yy0 * yy0;
-      uint16_t zz1 = yy1 * yy1;
       for (int16_t xx = y_min; xx <= y_max; xx++) {
-        uint16_t z0 = xx * xx + zz0;
-        uint16_t z1 = xx * xx + zz1;
-
         _image_set_pixel(image,
-                         _threshold(threshold, z0) ? circle->color : background,
+                         _get_threshold_pixel(xx, yy0, threshold)
+                             ? circle->color
+                             : background,
                          xx, yy0);
         _image_set_pixel(image,
-                         _threshold(threshold, z1) ? circle->color : background,
+                         _get_threshold_pixel(xx, yy1, threshold)
+                             ? circle->color
+                             : background,
                          xx, yy1);
       }
     }

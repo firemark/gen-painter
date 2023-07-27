@@ -1,5 +1,6 @@
 #include "art.h"
 #include "forecast.h"
+#include "image.h"
 #include "random.h"
 #include "tree.h"
 #include "clouds.h"
@@ -66,9 +67,11 @@ static void _reset(void) {
   grass_reset();
   clouds_reset();
   random_shuffle_array();
+  dithering_array_random();
 }
 
 void art_init(void) {
+  dithering_array_init();
   tree_init();
   clouds_init();
   grass_init();

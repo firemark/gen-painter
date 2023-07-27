@@ -17,8 +17,8 @@ void landscape_generate(void){
 void landscape_draw(struct Image *image) {
   int16_t y = FULL_IMAGE_HEIGHT - 1 - _background_size + _background_shift;
   _i = 0;
-  _draw_background_bar(image, y - _background_size * 2, 96);
-  _draw_background_bar(image, y - _background_size, 112);
+  _draw_background_bar(image, y - _background_size * 2, 32);
+  _draw_background_bar(image, y - _background_size, 64);
   _draw_background_bar(image, y - _background_size / 2, 128);
   _draw_background_bar(image, y, 160);
 }

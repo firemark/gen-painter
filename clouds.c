@@ -122,10 +122,10 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
     }
   }
 
-  _draw_background_cloud_fancy(image, cloud, 128 - 16, -4, -4, 8);
-  _draw_background_cloud_fancy(image, cloud, 128 + 64, 2, 2, 6);
-  _draw_background_cloud_fancy(image, cloud, 128, 0, 0, 2);
-  _draw_background_cloud_fancy(image, cloud, 128, -2, -2, 2);
+  _draw_background_cloud_fancy(image, cloud, 128 - 32, -4, -4, 8);
+  _draw_background_cloud_fancy(image, cloud, 128 + 64 + 32 + 16, 2, 2, 6);
+  _draw_background_cloud_fancy(image, cloud, 128 + 64, 0, 0, 2);
+  _draw_background_cloud_fancy(image, cloud, 128 + 64, -2, -2, 2);
 
   int8_t r0x = 16 - random_next(&_i);
   int8_t r0y = 16 - random_next(&_i);
