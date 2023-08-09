@@ -1,3 +1,4 @@
+#include "image.h"
 #include "random.h"
 
 #include "_share.h"
@@ -9,7 +10,7 @@ static uint8_t _i;
 static void _draw_background_bar(struct Image *image, int16_t y,
                                  uint8_t threshold);
 
-void landscape_generate(void){
+void landscape_generate(void) {
   _background_size = 48 + random_int(32);
   _background_shift = random_int(16);
 };

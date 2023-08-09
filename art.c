@@ -5,6 +5,7 @@
 #include "clouds.h"
 #include "grass.h"
 #include "landscape.h"
+#include "sun.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -13,16 +14,14 @@
 
 #include "_share.h"
 
-static uint16_t _rain_density;
-
-int16_t _temperature;
-
+struct ArtData _data;
 enum Color _background_color;
 enum Color _leaves_color;
 enum Color _branches_color;
 
 static void _rain(struct Image *image) {
-  for (uint16_t i = 0; i < _rain_density; i++) {
+  uint16_t density = _data.rain_density < 2000 ? _data.rain_density : 2000;
+  for (uint16_t i = 0; i < density; i++) {
     struct Point p0 = {image->offset.x + random_int(IMAGE_WIDTH),
                        image->offset.y + random_int(IMAGE_HEIGHT)};
     struct Point p1 = {p0.x - 8, p0.y + 8};
@@ -64,7 +63,6 @@ static void _random_colors(void) {
 static void _reset(void) {
   tree_reset();
   grass_reset();
-  clouds_reset();
   random_shuffle_array();
 }
 
@@ -74,20 +72,20 @@ void art_init(void) {
   grass_init();
 }
 
-void art_make(int16_t temperature, uint16_t rain_density) {
+void art_make(struct ArtData data) {
+  _data = data;
   _reset();
   _random_colors();
   tree_generate();
   grass_generate();
   clouds_generate();
   landscape_generate();
-  _rain_density = rain_density;
-  _temperature = temperature;
 }
 
 void art_draw(struct Image *image) {
   image_clear(image, _background_color);
 
+  sun_draw(image);
   _rain(image);
   clouds_draw(image);
   landscape_draw(image);
@@ -97,6 +95,8 @@ void art_draw(struct Image *image) {
   tree_draw_branches(image);
   grass_draw_front(image);
   tree_draw_front(image);
+
+  _rain(image);
 
   forecast_draw(image);
 }

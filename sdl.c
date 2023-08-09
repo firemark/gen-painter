@@ -39,10 +39,25 @@ SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
   return surface;
 }
 
+static struct ArtData _data = {
+    .forecast =
+        {
+            {.temperature = -333, .hour = 23, .minute = 00},
+            {.temperature = -333, .hour = 12, .minute = 20},
+            {.temperature = -333, .hour = 00, .minute = 40},
+            {.temperature = -333, .hour = 07, .minute = 59},
+        },
+    .rain_density = 0,
+    .clouds_count = 0,
+    .minute = 6 * 60,
+};
+
 void core(SDL_Surface *screen_surface) {
+  printf("clouds: %3d; rain: %4d; hour: %02d:%02d\n", _data.clouds_count,
+         _data.rain_density, _data.minute / 60, _data.minute % 60);
   struct Image image = {.offset.x = 0, .offset.y = 0};
 
-  art_make(-123, 128);
+  art_make(_data);
 
   uint16_t W[2] = {648, 656};
   uint16_t H[2] = {492, 492};
@@ -108,12 +123,31 @@ int main(int argc, char *args[]) {
     if (SDL_WaitEvent(&event)) {
       if (event.type == SDL_QUIT) {
         quit = 1;
-      } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q) {
-        quit = 1;
-      } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r) {
-
-        core(screenSurface);
-        SDL_UpdateWindowSurface(window);
+      } else if (event.type == SDL_KEYDOWN) {
+        switch (event.key.keysym.sym) {
+        case SDLK_q:
+          quit = 1;
+          break;
+        case SDLK_r:
+          core(screenSurface);
+          SDL_UpdateWindowSurface(window);
+          break;
+        case SDLK_a:
+          _data.clouds_count = (_data.clouds_count + 1) % 51;
+          core(screenSurface);
+          SDL_UpdateWindowSurface(window);
+          break;
+        case SDLK_s:
+          _data.rain_density = (_data.rain_density + 100) % 2100;
+          core(screenSurface);
+          SDL_UpdateWindowSurface(window);
+          break;
+        case SDLK_d:
+          _data.minute = (_data.minute + 15) % (24 * 60);
+          core(screenSurface);
+          SDL_UpdateWindowSurface(window);
+          break;
+        }
       }
     }
   }

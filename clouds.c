@@ -1,6 +1,7 @@
 #include "clouds.h"
 #include "random.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "_share.h"
@@ -13,7 +14,6 @@ struct Cloud {
   uint8_t height;
 };
 
-static uint16_t _clouds_count;
 static uint8_t _i;
 
 static struct Cloud *_clouds;
@@ -28,16 +28,14 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
 
 void clouds_init(void) { _clouds = malloc(sizeof(struct Cloud) * CLOUDS_SIZE); }
 
-void clouds_reset(void) { _clouds_count = 0; }
-
 void clouds_generate(void) {
-  _clouds_count = random_int(8);
-  for (uint8_t i = 0; i < _clouds_count; i++) {
+  uint8_t clouds_count = _data.clouds_count < CLOUDS_SIZE ? _data.clouds_count : CLOUDS_SIZE;  
+  for (uint8_t i = 0; i < clouds_count; i++) {
     _clouds[i] = (struct Cloud){
         .point =
             {
                 .x = random_int(FULL_IMAGE_WIDTH),
-                .y = random_int(500),
+                .y = random_int(FULL_IMAGE_HEIGHT - 100),
             },
         .width = 8 + random_int(8),
         .height = 4 + random_int(3),
@@ -46,8 +44,8 @@ void clouds_generate(void) {
 }
 
 void clouds_draw(struct Image *image) {
-  _i = 0;
-  for (uint8_t i = 0; i < _clouds_count; i++) {
+  uint8_t clouds_count = _data.clouds_count < CLOUDS_SIZE ? _data.clouds_count : CLOUDS_SIZE;  
+  for (uint8_t i = 0; i < clouds_count; i++) {
     _draw_background_cloud(image, &_clouds[i], 0);
   }
 }
@@ -122,10 +120,10 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
     }
   }
 
-  _draw_background_cloud_fancy(image, cloud, 128 - 16, -4, -4, 8);
-  _draw_background_cloud_fancy(image, cloud, 128 + 64, 2, 2, 6);
-  _draw_background_cloud_fancy(image, cloud, 128, 0, 0, 2);
-  _draw_background_cloud_fancy(image, cloud, 128, -2, -2, 2);
+  _draw_background_cloud_fancy(image, cloud, 128 - 32, -4, -4, 8);
+  _draw_background_cloud_fancy(image, cloud, 128, 2, 2, 6);
+  _draw_background_cloud_fancy(image, cloud, 128 - 8, 0, 0, 2);
+  _draw_background_cloud_fancy(image, cloud, 128 - 8, -2, -2, 2);
 
   int8_t r0x = 16 - random_next(&_i);
   int8_t r0y = 16 - random_next(&_i);

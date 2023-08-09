@@ -1,9 +1,10 @@
 #pragma once
 #include "image.h"
+#include "art_data.h"
 #include <stdint.h>
 
 void art_init(void);
-void art_make(int16_t temperature, uint16_t rain_density);
+void art_make(struct ArtData data);
 void art_draw(struct Image *image);
 
 // This functions should be implemented in main!

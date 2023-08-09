@@ -2,8 +2,8 @@
 #include <time.h>
 
 #include "esp_sntp.h"
-#include <Arduino_JSON.h>
-#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <HttpClient.h>
 #include <WiFi.h>
 
 #include "DEV_Config.h"
@@ -29,15 +29,10 @@ static void draw_M2(struct Image *image);
 
 uint32_t art_random() { return esp_random(); }
 
-struct WeatherData {
-  uint16_t temperature;
-} weather_data;
+struct ArtData _data;
 
 void setup() {
   DEV_ModuleInit();
-
-  printf("Art Init\r\n");
-  art_init();
 
   printf("Screen init\r\n");
   EPD_12in48B_Init();
@@ -48,17 +43,26 @@ void loop() {
     return finish();
   }
 
+  printf("Available memory: %ld\n",
+         heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
   printf("Download weather data\r\n");
   if (!download_weather_data()) {
     printf("Something with downloading is wrong...\r\n");
     return finish();
   }
 
-  printf("Current Weather: %dC\r\n", weather_data.temperature);
+  printf("Available memory: %ld\n",
+         heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
+  printf("Art Init\r\n");
+  art_init();
 
+  printf("Available memory: %ld\n",
+         heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
   printf("Make the art\r\n");
-  art_make(weather_data.temperature, 32);
+  art_make(_data);
 
+  printf("Available memory: %ld\n",
+         heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
   printf("Screen fill with the art\r\n");
   draw_to_screen();
 
@@ -109,7 +113,7 @@ static bool sync_time(void) {
   printf("Synchronize time\r\n");
 
   sntp_init();
-  // 24 hours, I don't need smooth synchronization because 
+  // 24 hours, I don't need smooth synchronization because
   // I need only is to get current hour.
   sntp_set_sync_interval(86400000L);
   sntp_restart();
@@ -160,66 +164,107 @@ static bool check_time() {
   printf("%02d:%02d:%02d\r\n", timeinfo.tm_hour, timeinfo.tm_min,
          timeinfo.tm_sec);
 
-  if (timeinfo.tm_hour < 6) {
-    printf("Screen doesn't work during midnight!\r\n");
-    return false;
-  }
+  // if (timeinfo.tm_hour < 6) {
+  //   printf("Screen doesn't work during midnight!\r\n");
+  //   return false;
+  // }
 
+  _data.minute = timeinfo.tm_hour * 60 + timeinfo.tm_min;
   return true;
 }
 
-static String http_get(const std::string &uri) {
-  // https://randomnerdtutorials.com/esp32-http-get-open-weather-map-thingspeak-arduino/
-  if (!connect_wifi()) {
-    return "{}";
-  }
-
-  WiFiClient client;
-  HTTPClient http;
-
-  // Your Domain name with URL path or IP address with path
-  http.begin(client, uri.c_str());
-
-  // Send HTT GET request
-  int httpResponseCode = http.GET();
-
-  String payload = "{}";
-
-  if (httpResponseCode >= 200 && httpResponseCode < 300) {
-    printf("HTTP Response code: %d\r\n", httpResponseCode);
-    payload = http.getString();
-  } else {
-    printf("Error code: %d\n", httpResponseCode);
-  }
-  // Free resources
-  http.end();
-
-  return payload;
-}
-
 static bool download_weather_data(void) {
-  // https://randomnerdtutorials.com/esp32-http-get-open-weather-map-thingspeak-arduino/
-  std::string uri =
-      "http://api.openweathermap.org/data/2.5/weather?units=metric&q=";
-  String jsonBuffer =
-      http_get(uri + CITY + "," + COUNTRY + "&APPID=" + OPEN_WEATHER_API_KEY);
-  // Serial.println(jsonBuffer);
-  JSONVar myObject = JSON.parse(jsonBuffer.c_str());
-
-  // JSON.typeof(jsonVar) can be used to get the type of the var
-  if (JSON.typeof(myObject) == "undefined") {
-    printf("Parsing weather data failed!");
+  if (!connect_wifi()) {
     return false;
   }
 
-  weather_data.temperature = myObject["main"]["temp"];
+  // https://randomnerdtutorials.com/esp32-http-get-open-weather-map-thingspeak-arduino/
+  std::string uri = "/data/2.5/forecast?units=metric&cnt=4";
+  uri = uri + "&lat=" + LATITUDE + "&lon=" + LONGITUDE;
+  uri = uri + "&APPID=" + OPEN_WEATHER_API_KEY;
+
+  DynamicJsonDocument response(2560);
+  DeserializationError error;
+
+  {
+    WiFiClient client;
+    HttpClient http(client);
+    int conn_err = http.get("api.openweathermap.org", uri.c_str());
+    if (conn_err != 0) {
+      printf("Connection error: %d\n", conn_err);
+    }
+    int status = http.responseStatusCode();
+    printf("HTTP CODE: %d\n", status);
+    http.skipResponseHeaders();
+    error = deserializeJson(response, http);
+    http.stop();
+  }
+
+  if (error) {
+    printf("Parsing weather data failed: %s \n", error.f_str());
+    return false;
+  }
+
+  for (int i = 0; i < 4; i++) {
+    JsonVariant item = response["list"][i].as<JsonVariant>();
+    struct Forecast *forecast = &_data.forecast[i];
+    uint16_t weather_id = item["weather"][0]["id"];
+    switch (weather_id / 100) {
+    case 2:
+      forecast->type = THUNDERSTORM;
+      break;
+    case 3:
+      forecast->type = DRIZZLE;
+      break;
+    case 5:
+      forecast->type = weather_id < 520 ? RAIN : SHOWER_RAIN;
+      break;
+    case 6:
+      forecast->type = weather_id < 620 ? SNOW : SHOWER_SNOW;
+      break;
+    case 7:
+      forecast->type = FOG;
+      break;
+    case 8:
+      forecast->type = weather_id <= 801 ? CLEAR : CLOUDS;
+      break;
+    default:
+      forecast->type = WTF;
+      break;
+    }
+
+    time_t dt = item["dt"];
+    struct tm timeinfo;
+    localtime_r(&dt, &timeinfo);
+
+    forecast->hour = timeinfo.tm_hour;
+    forecast->minute = timeinfo.tm_min;
+    forecast->temperature = item["main"]["temp"];
+
+    printf("Forecast %d id: %3d, timestamp: %ld time: %02d:%02d; temperature: "
+           "%2d\n",
+           i, weather_id, dt, forecast->hour, forecast->minute,
+           forecast->temperature);
+  }
+
+  {
+    JsonVariant item = response["list"][0].as<JsonVariant>();
+    _data.rain_density = static_cast<double>(item["rain"]["3h"]) * 8.0;
+    _data.snow_density = static_cast<double>(item["snow"]["3h"]) * 8.0;
+    _data.clouds_count = static_cast<double>(item["clouds"]["all"]) / 2;
+    printf("Rain density: %d; clouds: %d\n", _data.rain_density,
+           _data.clouds_count);
+  }
+
   return true;
 }
 
 static void draw_to_screen(void) {
-  static struct Image *image = NULL;
+  struct Image *image = (struct Image *)malloc(sizeof(struct Image));
   if (!image) {
-    image = (struct Image *)malloc(sizeof(struct Image));
+    printf("Not enough memory to draw! available memory: %ld; required: %ld\n",
+           heap_caps_get_free_size(MALLOC_CAP_DEFAULT), sizeof(struct Image));
+    return;
   }
 
   image->offset.x = 0;
@@ -239,6 +284,8 @@ static void draw_to_screen(void) {
   image->offset.x = EPD_12in48B_S2_WIDTH;
   art_draw(image);
   draw_S1(image);
+
+  free(image);
 }
 
 static void draw_S1(struct Image *image) {

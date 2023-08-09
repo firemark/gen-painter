@@ -464,17 +464,15 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
     if (x_max > x_min) {
       int16_t yy0 = y0 + y;
       int16_t yy1 = y0 - y;
-      uint16_t zz0 = yy0 * yy0;
-      uint16_t zz1 = yy1 * yy1;
       for (int16_t xx = x_min; xx <= x_max; xx++) {
-        uint16_t z0 = xx * xx + zz0;
-        uint16_t z1 = xx * xx + zz1;
+        uint8_t z0 = _threshold(threshold, xx + yy0) | _threshold(threshold, xx - yy0);
+        uint8_t z1 = _threshold(threshold, xx + yy1) | _threshold(threshold, xx - yy1);
 
         _image_set_pixel(image,
-                         _threshold(threshold, z0) ? circle->color : background,
+                         z0 ? circle->color : background,
                          xx, yy0);
         _image_set_pixel(image,
-                         _threshold(threshold, z1) ? circle->color : background,
+                         z1 ? circle->color : background,
                          xx, yy1);
       }
     }
@@ -482,17 +480,15 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
     if (y_max > y_min) {
       int16_t yy0 = y0 + x;
       int16_t yy1 = y0 - x;
-      uint16_t zz0 = yy0 * yy0;
-      uint16_t zz1 = yy1 * yy1;
       for (int16_t xx = y_min; xx <= y_max; xx++) {
-        uint16_t z0 = xx * xx + zz0;
-        uint16_t z1 = xx * xx + zz1;
+        uint8_t z0 = _threshold(threshold, xx + yy0) | _threshold(threshold, xx - yy0);
+        uint8_t z1 = _threshold(threshold, xx + yy1) | _threshold(threshold, xx - yy1);
 
         _image_set_pixel(image,
-                         _threshold(threshold, z0) ? circle->color : background,
+                         z0 ? circle->color : background,
                          xx, yy0);
         _image_set_pixel(image,
-                         _threshold(threshold, z1) ? circle->color : background,
+                         z1 ? circle->color : background,
                          xx, yy1);
       }
     }
