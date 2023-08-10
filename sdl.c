@@ -55,7 +55,10 @@ static struct ArtData _data = {
 void core(SDL_Surface *screen_surface) {
   printf("clouds: %3d; rain: %4d; hour: %02d:%02d\n", _data.clouds_count,
          _data.rain_density, _data.minute / 60, _data.minute % 60);
-  struct Image image = {.offset.x = 0, .offset.y = 0};
+      
+  struct Image *image = image_create();
+  image->offset.x = 0;
+  image->offset.y = 0;
 
   art_make(_data);
 
@@ -64,23 +67,25 @@ void core(SDL_Surface *screen_surface) {
 
   for (uint8_t y = 0; y < 2; y++) {
     for (uint8_t x = 0; x < 2; x++) {
-      art_draw(&image);
+      art_draw(image);
 
       SDL_Rect dstrect = {
-          .x = image.offset.x,
-          .y = image.offset.y,
+          .x = image->offset.x,
+          .y = image->offset.y,
           .w = W[x],
           .h = H[y],
       };
 
-      SDL_Surface *surface = draw(&image, W[x], H[y]);
+      SDL_Surface *surface = draw(image, W[x], H[y]);
       SDL_BlitSurface(surface, NULL, screen_surface, &dstrect);
       SDL_FreeSurface(surface);
-      image.offset.x += W[x];
+      image->offset.x += W[x];
     }
-    image.offset.y += H[y];
-    image.offset.x = 0;
+    image->offset.y += H[y];
+    image->offset.x = 0;
   }
+
+  image_destroy(image);
 }
 
 int main(int argc, char *args[]) {

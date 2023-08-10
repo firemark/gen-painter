@@ -66,10 +66,8 @@ static void _reset(void) {
   random_shuffle_array();
 }
 
-void art_init(void) {
-  tree_init();
-  clouds_init();
-  grass_init();
+uint8_t art_init(void) {
+  return tree_init() && clouds_init() && grass_init();
 }
 
 void art_make(struct ArtData data) {

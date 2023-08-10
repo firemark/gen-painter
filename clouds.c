@@ -26,10 +26,14 @@ static void _draw_background_cloud_fancy(struct Image *image,
 static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
                                    uint8_t step);
 
-void clouds_init(void) { _clouds = malloc(sizeof(struct Cloud) * CLOUDS_SIZE); }
+uint8_t clouds_init(void) {
+  _clouds = malloc(sizeof(struct Cloud) * CLOUDS_SIZE);
+  return _clouds != NULL;
+}
 
 void clouds_generate(void) {
-  uint8_t clouds_count = _data.clouds_count < CLOUDS_SIZE ? _data.clouds_count : CLOUDS_SIZE;  
+  uint8_t clouds_count =
+      _data.clouds_count < CLOUDS_SIZE ? _data.clouds_count : CLOUDS_SIZE;
   for (uint8_t i = 0; i < clouds_count; i++) {
     _clouds[i] = (struct Cloud){
         .point =
@@ -44,7 +48,8 @@ void clouds_generate(void) {
 }
 
 void clouds_draw(struct Image *image) {
-  uint8_t clouds_count = _data.clouds_count < CLOUDS_SIZE ? _data.clouds_count : CLOUDS_SIZE;  
+  uint8_t clouds_count =
+      _data.clouds_count < CLOUDS_SIZE ? _data.clouds_count : CLOUDS_SIZE;
   for (uint8_t i = 0; i < clouds_count; i++) {
     _draw_background_cloud(image, &_clouds[i], 0);
   }

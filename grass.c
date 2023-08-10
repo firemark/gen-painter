@@ -18,7 +18,10 @@ static struct LineZ *_grass;
 
 static void _grass_generate(int16_t y);
 
-void grass_init(void) { _grass = malloc(sizeof(struct LineZ) * GRASS_SIZE); };
+uint8_t grass_init(void) {
+  _grass = malloc(sizeof(struct LineZ) * GRASS_SIZE);
+  return _grass != NULL;
+};
 
 void grass_reset(void) { _grass_count = 0; }
 

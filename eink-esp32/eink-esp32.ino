@@ -43,26 +43,23 @@ void loop() {
     return finish();
   }
 
-  printf("Available memory: %ld\n",
-         heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
   printf("Download weather data\r\n");
   if (!download_weather_data()) {
     printf("Something with downloading is wrong...\r\n");
     return finish();
   }
 
-  printf("Available memory: %ld\n",
-         heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
   printf("Art Init\r\n");
-  art_init();
+  if (!art_init()) {
+    printf("Not enough memory to initialize art.\r\n");
+    printf("Available memory: %ld\n",
+          heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
+    return finish();
+  }
 
-  printf("Available memory: %ld\n",
-         heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
   printf("Make the art\r\n");
   art_make(_data);
 
-  printf("Available memory: %ld\n",
-         heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
   printf("Screen fill with the art\r\n");
   draw_to_screen();
 
@@ -260,7 +257,7 @@ static bool download_weather_data(void) {
 }
 
 static void draw_to_screen(void) {
-  struct Image *image = (struct Image *)malloc(sizeof(struct Image));
+  struct Image *image = image_create();
   if (!image) {
     printf("Not enough memory to draw! available memory: %ld; required: %ld\n",
            heap_caps_get_free_size(MALLOC_CAP_DEFAULT), sizeof(struct Image));
@@ -285,7 +282,7 @@ static void draw_to_screen(void) {
   art_draw(image);
   draw_S1(image);
 
-  free(image);
+  image_destroy(image);
 }
 
 static void draw_S1(struct Image *image) {

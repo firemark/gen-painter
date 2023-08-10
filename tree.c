@@ -23,22 +23,23 @@ struct Tree {
 };
 
 static uint16_t _branches_count;
-static uint16_t _leafes_count;
+static uint16_t _leaves_count;
 
 static struct Line *_branches;
-static struct Circle *_leafes;
+static struct Circle *_leaves;
 
 static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
                   float rot);
 
-void tree_init(void) {
+uint8_t tree_init(void) {
   _branches = malloc(sizeof(struct Line) * BRANCHES_SIZE);
-  _leafes = malloc(sizeof(struct Circle) * LEAFES_SIZE);
+  _leaves = malloc(sizeof(struct Circle) * LEAFES_SIZE);
+  return _branches != NULL && _leaves != NULL;
 }
 
 void tree_reset(void) {
   _branches_count = 0;
-  _leafes_count = 0;
+  _leaves_count = 0;
 }
 
 void tree_generate(void) {
@@ -60,15 +61,15 @@ void tree_generate(void) {
   _tree(6, &tree, p, w, rot);
 
   printf("total branches: %d\n", _branches_count);
-  printf("total leafes: %d\n", _leafes_count);
+  printf("total leafes: %d\n", _leaves_count);
 }
 
 void tree_draw_back(struct Image *image) {
-  for (uint16_t i = 0; i < _leafes_count; i++) {
+  for (uint16_t i = 0; i < _leaves_count; i++) {
     for (uint16_t j = 0; j < 3; j++) {
       uint16_t dx = 16 - random_int(32);
       uint16_t dy = 16 - random_int(32);
-      struct Circle circle = _leafes[i];
+      struct Circle circle = _leaves[i];
       circle.p.x += dx;
       circle.p.y += dy;
       image_draw_circle(image, &circle);
@@ -77,11 +78,11 @@ void tree_draw_back(struct Image *image) {
 }
 
 void tree_draw_front(struct Image *image) {
-  for (uint16_t i = 0; i < _leafes_count; i++) {
+  for (uint16_t i = 0; i < _leaves_count; i++) {
     for (uint16_t j = 0; j < 2; j++) {
       uint16_t dx = 16 - random_int(32);
       uint16_t dy = 16 - random_int(32);
-      struct Circle circle = _leafes[i];
+      struct Circle circle = _leaves[i];
       circle.p.x += dx;
       circle.p.y += dy;
       image_draw_circle(image, &circle);
@@ -107,11 +108,11 @@ void tree_draw_branches(struct Image *image) {
 static inline float _thickness(int16_t w) { return w * w / 2048.0 + 1.0; }
 
 static void _leaf(struct Point p, uint16_t size) {
-  if (_leafes_count >= LEAFES_SIZE) {
+  if (_leaves_count >= LEAFES_SIZE) {
     return;
   }
 
-  _leafes[_leafes_count++] = (struct Circle){
+  _leaves[_leaves_count++] = (struct Circle){
       .color = _leaves_color,
       .d = size,
       .p = p,

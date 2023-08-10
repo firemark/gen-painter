@@ -3,7 +3,7 @@
 #include "art_data.h"
 #include <stdint.h>
 
-void art_init(void);
+uint8_t art_init(void);
 void art_make(struct ArtData data);
 void art_draw(struct Image *image);
 

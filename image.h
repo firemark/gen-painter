@@ -3,7 +3,10 @@
 
 #define IMAGE_WIDTH 656
 #define IMAGE_HEIGHT 492
+#define BUFFER_CHUNK_COUNT 4
+#define IMAGE_HEIGHT_CHUNK (IMAGE_HEIGHT / BUFFER_CHUNK_COUNT)
 #define IMAGE_SIZE (IMAGE_HEIGHT * (IMAGE_WIDTH >> 2))
+#define IMAGE_SIZE_CHUNK (IMAGE_HEIGHT_CHUNK * (IMAGE_WIDTH >> 2))
 
 #define FULL_IMAGE_WIDTH 1304
 #define FULL_IMAGE_HEIGHT 984
@@ -34,13 +37,17 @@ struct Circle {
 
 struct Image {
   struct Point offset;
-  uint8_t buffer[IMAGE_SIZE];
+  // Because ESP32 doesn't have virtual addresses,
+  // It's required to make smaller chunks in different parts of memory.
+  uint8_t *buffer[BUFFER_CHUNK_COUNT];
 };
 
 struct Bitmap {
   uint8_t buffer[BITMAP_SIZE];
 };
 
+struct Image *image_create();
+void image_destroy(struct Image * image);
 void image_clear(struct Image *image, enum Color color);
 void image_draw_line(struct Image *image, struct Line *line);
 void image_draw_circle(struct Image *image, struct Circle *circle);
@@ -52,8 +59,10 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
 
 static inline enum Color image_get(struct Image *image, uint16_t x,
                                    uint16_t y) {
-  uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);
-  uint8_t byte = image->buffer[index];
+  uint8_t chunk = y / IMAGE_HEIGHT_CHUNK;
+  uint32_t index = (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
+  uint8_t byte = image->buffer[chunk][index];
+
   switch (x & 0b11) {
   case 0:
     return (enum Color)(byte & 0b00000011);

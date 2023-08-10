@@ -1,5 +1,6 @@
 #include "image.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 #define TO_FIXED_POINT(x) ((x) << 16)
 #define FROM_FIXED_POINT(x) ((x) >> 16)
@@ -27,10 +28,45 @@
     }                                                                          \
   }
 
+struct Image *image_create() {
+  struct Image *image = (struct Image *)malloc(sizeof(struct Image));
+  if (image == NULL) {
+    return NULL;
+  }
+
+  for (uint8_t i = 0; i < BUFFER_CHUNK_COUNT; i++) {
+    image->buffer[i] = (uint8_t*)malloc(IMAGE_SIZE_CHUNK);
+  }
+
+  for (uint8_t i = 0; i < BUFFER_CHUNK_COUNT; i++) {
+    if(image->buffer[i] == NULL) {
+      image_destroy(image);
+      return NULL;
+    }
+  }
+  return image;
+}
+
+void image_destroy(struct Image *image) {
+  if (image == NULL) {
+    return;
+  }
+
+  for (uint8_t i = 0; i < BUFFER_CHUNK_COUNT; i++) {
+    if (image->buffer[i] == NULL) {
+      continue;
+    }
+    free(image->buffer[i]);
+  }
+  free(image);
+}
+
 void image_clear(struct Image *image, enum Color color) {
   uint8_t byte = color | (color << 2) | (color << 4) | (color << 6);
-  for (uint32_t i = 0; i < IMAGE_SIZE; i++) {
-    image->buffer[i] = byte;
+  for (uint8_t chunk = 0; chunk < BUFFER_CHUNK_COUNT; chunk++) {
+    for (uint32_t i = 0; i < IMAGE_SIZE_CHUNK; i++) {
+      image->buffer[chunk][i] = byte;
+    }
   }
 }
 
@@ -39,8 +75,9 @@ static inline void _image_set_pixel(struct Image *image, enum Color color,
   if (x >= IMAGE_WIDTH || y >= IMAGE_HEIGHT) {
     return;
   }
-  uint32_t index = (x >> 2) + y * (IMAGE_WIDTH >> 2);
-  uint8_t *byte = &image->buffer[index];
+  uint8_t chunk = y / IMAGE_HEIGHT_CHUNK;
+  uint32_t index = (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
+  uint8_t *byte = &image->buffer[chunk][index];
   switch (x & 0b11) {
   case 0:
     *byte = (*byte & 0b11111100) | color;
@@ -465,15 +502,13 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
       int16_t yy0 = y0 + y;
       int16_t yy1 = y0 - y;
       for (int16_t xx = x_min; xx <= x_max; xx++) {
-        uint8_t z0 = _threshold(threshold, xx + yy0) | _threshold(threshold, xx - yy0);
-        uint8_t z1 = _threshold(threshold, xx + yy1) | _threshold(threshold, xx - yy1);
+        uint8_t z0 =
+            _threshold(threshold, xx + yy0) | _threshold(threshold, xx - yy0);
+        uint8_t z1 =
+            _threshold(threshold, xx + yy1) | _threshold(threshold, xx - yy1);
 
-        _image_set_pixel(image,
-                         z0 ? circle->color : background,
-                         xx, yy0);
-        _image_set_pixel(image,
-                         z1 ? circle->color : background,
-                         xx, yy1);
+        _image_set_pixel(image, z0 ? circle->color : background, xx, yy0);
+        _image_set_pixel(image, z1 ? circle->color : background, xx, yy1);
       }
     }
 
@@ -481,15 +516,13 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
       int16_t yy0 = y0 + x;
       int16_t yy1 = y0 - x;
       for (int16_t xx = y_min; xx <= y_max; xx++) {
-        uint8_t z0 = _threshold(threshold, xx + yy0) | _threshold(threshold, xx - yy0);
-        uint8_t z1 = _threshold(threshold, xx + yy1) | _threshold(threshold, xx - yy1);
+        uint8_t z0 =
+            _threshold(threshold, xx + yy0) | _threshold(threshold, xx - yy0);
+        uint8_t z1 =
+            _threshold(threshold, xx + yy1) | _threshold(threshold, xx - yy1);
 
-        _image_set_pixel(image,
-                         z0 ? circle->color : background,
-                         xx, yy0);
-        _image_set_pixel(image,
-                         z1 ? circle->color : background,
-                         xx, yy1);
+        _image_set_pixel(image, z0 ? circle->color : background, xx, yy0);
+        _image_set_pixel(image, z1 ? circle->color : background, xx, yy1);
       }
     }
 
