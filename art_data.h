@@ -1,17 +1,20 @@
 #pragma once
 #include <stdint.h>
 
+#define FORECAST_SIZE 4
+
 enum WeatherType {
-    THUNDERSTORM,
-    DRIZZLE,
-    RAIN,
-    SHOWER_RAIN,
-    SNOW,
-    SHOWER_SNOW,
-    FOG,
-    CLEAR,
-    CLOUDS,
-    WTF,
+    WEATHER_THUNDERSTORM = 0,
+    WEATHER_DRIZZLE,
+    WEATHER_RAIN,
+    WEATHER_SHOWER_RAIN,
+    WEATHER_SNOW,
+    WEATHER_SHOWER_SNOW,
+    WEATHER_FOG,
+    WEATHER_CLEAR,
+    WEATHER_FEW_CLOUDS,
+    WEATHER_MANY_CLOUDS,
+    WEATHER_WTF,
 };
 
 struct Forecast {
@@ -19,10 +22,10 @@ struct Forecast {
     uint8_t hour;
     uint8_t minute;
     int16_t temperature;
-} forecast[4];
+};
 
 struct ArtData {
-    struct Forecast forecast[4];
+    struct Forecast forecast[FORECAST_SIZE];
     
     uint16_t minute;
     uint16_t rain_density;

@@ -1,11 +1,11 @@
 #include "art.h"
-#include "forecast.h"
-#include "random.h"
-#include "tree.h"
 #include "clouds.h"
+#include "forecast.h"
 #include "grass.h"
 #include "landscape.h"
+#include "random.h"
 #include "sun.h"
+#include "tree.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -32,6 +32,32 @@ static void _rain(struct Image *image) {
         .color = _branches_color,
     };
     image_draw_line(image, &line);
+  }
+}
+
+static void _snow(struct Image *image) {
+  uint16_t density = _data.snow_density < 2000 ? _data.snow_density : 2000;
+  for (uint16_t i = 0; i < density; i++) {
+    struct Point p = {image->offset.x + random_int(IMAGE_WIDTH),
+                      image->offset.y + random_int(IMAGE_HEIGHT)};
+    for (int8_t j = -1; j <= 1; j++) {
+      struct Line line = {
+          .p0 = {p.x + 4 * j, p.y},
+          .p1 = {p.x - 4 * j, p.y + 8},
+          .thickness = 1,
+          .color = _branches_color,
+      };
+      image_draw_line(image, &line);
+    }
+    {
+      struct Line line = {
+          .p0 = {p.x + 4, p.y + 4},
+          .p1 = {p.x - 4, p.y + 4},
+          .thickness = 1,
+          .color = _branches_color,
+      };
+      image_draw_line(image, &line);
+    }
   }
 }
 
@@ -66,9 +92,7 @@ static void _reset(void) {
   random_shuffle_array();
 }
 
-uint8_t art_init(void) {
-  return tree_init() && clouds_init() && grass_init();
-}
+uint8_t art_init(void) { return tree_init() && clouds_init() && grass_init(); }
 
 void art_make(struct ArtData data) {
   _data = data;
@@ -85,6 +109,7 @@ void art_draw(struct Image *image) {
 
   sun_draw(image);
   _rain(image);
+  _snow(image);
   clouds_draw(image);
   landscape_draw(image);
 

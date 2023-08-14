@@ -53,7 +53,7 @@ void loop() {
   if (!art_init()) {
     printf("Not enough memory to initialize art.\r\n");
     printf("Available memory: %ld\n",
-          heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
+           heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
     return finish();
   }
 
@@ -170,6 +170,31 @@ static bool check_time() {
   return true;
 }
 
+static enum WeatherType weather_id_to_type(uint16_t weather_id) {
+  switch (weather_id / 100) {
+  case 2:
+    return WEATHER_THUNDERSTORM;
+  case 3:
+    return WEATHER_DRIZZLE;
+  case 5:
+    return weather_id < 520 ? WEATHER_RAIN : WEATHER_SHOWER_RAIN;
+  case 6:
+    return weather_id < 620 ? WEATHER_SNOW : WEATHER_SHOWER_SNOW;
+  case 7:
+    return WEATHER_FOG;
+  case 8:
+    switch (weather_id) {
+    case 800:
+      return WEATHER_CLEAR;
+    case 801:
+      return WEATHER_FEW_CLOUDS;
+    default:
+      return WEATHER_MANY_CLOUDS;
+    }
+  }
+  return WEATHER_WTF;
+}
+
 static bool download_weather_data(void) {
   if (!connect_wifi()) {
     return false;
@@ -203,37 +228,15 @@ static bool download_weather_data(void) {
   }
 
   for (int i = 0; i < 4; i++) {
-    JsonVariant item = response["list"][i].as<JsonVariant>();
+    const JsonVariant item = response["list"][i].as<JsonVariant>();
     struct Forecast *forecast = &_data.forecast[i];
     uint16_t weather_id = item["weather"][0]["id"];
-    switch (weather_id / 100) {
-    case 2:
-      forecast->type = THUNDERSTORM;
-      break;
-    case 3:
-      forecast->type = DRIZZLE;
-      break;
-    case 5:
-      forecast->type = weather_id < 520 ? RAIN : SHOWER_RAIN;
-      break;
-    case 6:
-      forecast->type = weather_id < 620 ? SNOW : SHOWER_SNOW;
-      break;
-    case 7:
-      forecast->type = FOG;
-      break;
-    case 8:
-      forecast->type = weather_id <= 801 ? CLEAR : CLOUDS;
-      break;
-    default:
-      forecast->type = WTF;
-      break;
-    }
 
     time_t dt = item["dt"];
     struct tm timeinfo;
     localtime_r(&dt, &timeinfo);
 
+    forecast->type = weather_id_to_type(weather_id);
     forecast->hour = timeinfo.tm_hour;
     forecast->minute = timeinfo.tm_min;
     forecast->temperature = item["main"]["temp"];
@@ -248,7 +251,7 @@ static bool download_weather_data(void) {
     JsonVariant item = response["list"][0].as<JsonVariant>();
     _data.rain_density = static_cast<double>(item["rain"]["3h"]) * 8.0;
     _data.snow_density = static_cast<double>(item["snow"]["3h"]) * 8.0;
-    _data.clouds_count = static_cast<double>(item["clouds"]["all"]) / 2;
+    _data.clouds_count = static_cast<double>(item["clouds"]["all"]) / 4.0;
     printf("Rain density: %d; clouds: %d\n", _data.rain_density,
            _data.clouds_count);
   }

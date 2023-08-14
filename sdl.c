@@ -7,6 +7,7 @@
 #include <SDL2/SDL_surface.h>
 
 #include "art.h"
+#include "art_data.h"
 
 #define SCREEN_WIDTH 1304
 #define SCREEN_HEIGHT 984
@@ -42,10 +43,22 @@ SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
 static struct ArtData _data = {
     .forecast =
         {
-            {.temperature = -333, .hour = 23, .minute = 00},
-            {.temperature = -333, .hour = 12, .minute = 20},
-            {.temperature = -333, .hour = 00, .minute = 40},
-            {.temperature = -333, .hour = 07, .minute = 59},
+            {.type = WEATHER_THUNDERSTORM,
+             .temperature = -33,
+             .hour = 23,
+             .minute = 00},
+            {.type = WEATHER_DRIZZLE,
+             .temperature = -33,
+             .hour = 12,
+             .minute = 20},
+            {.type = WEATHER_RAIN,
+             .temperature = -33,
+             .hour = 00,
+             .minute = 40},
+            {.type = WEATHER_SHOWER_RAIN,
+             .temperature = -33,
+             .hour = 07,
+             .minute = 59},
         },
     .rain_density = 0,
     .clouds_count = 0,
@@ -53,9 +66,9 @@ static struct ArtData _data = {
 };
 
 void core(SDL_Surface *screen_surface) {
-  printf("clouds: %3d; rain: %4d; hour: %02d:%02d\n", _data.clouds_count,
-         _data.rain_density, _data.minute / 60, _data.minute % 60);
-      
+  printf("clouds: %3d; rain: %4d; snow: %4d; hour: %02d:%02d\n", _data.clouds_count,
+         _data.rain_density, _data.snow_density, _data.minute / 60, _data.minute % 60);
+
   struct Image *image = image_create();
   image->offset.x = 0;
   image->offset.y = 0;
@@ -112,16 +125,6 @@ int main(int argc, char *args[]) {
 
   SDL_UpdateWindowSurface(window);
 
-  SDL_version compiled;
-  SDL_version linked;
-
-  SDL_VERSION(&compiled);
-  SDL_GetVersion(&linked);
-  printf("We compiled against SDL version %d.%d.%d ...\n", compiled.major,
-         compiled.minor, compiled.patch);
-  printf("But we are linking against SDL version %d.%d.%d.\n", linked.major,
-         linked.minor, linked.patch);
-
   SDL_Event event;
   uint8_t quit = 0;
   while (!quit) {
@@ -132,27 +135,32 @@ int main(int argc, char *args[]) {
         switch (event.key.keysym.sym) {
         case SDLK_q:
           quit = 1;
-          break;
+          continue;
         case SDLK_r:
-          core(screenSurface);
-          SDL_UpdateWindowSurface(window);
           break;
         case SDLK_a:
           _data.clouds_count = (_data.clouds_count + 1) % 51;
-          core(screenSurface);
-          SDL_UpdateWindowSurface(window);
           break;
         case SDLK_s:
           _data.rain_density = (_data.rain_density + 100) % 2100;
-          core(screenSurface);
-          SDL_UpdateWindowSurface(window);
           break;
         case SDLK_d:
-          _data.minute = (_data.minute + 15) % (24 * 60);
-          core(screenSurface);
-          SDL_UpdateWindowSurface(window);
+          _data.snow_density = (_data.snow_density + 100) % 2100;
           break;
+        case SDLK_f:
+          _data.minute = (_data.minute + 15) % (24 * 60);
+          break;
+        case SDLK_g:
+          for (uint8_t i = 0; i < FORECAST_SIZE; i++) {
+            _data.forecast[i].type =
+                (_data.forecast[i].type + 1) % (WEATHER_WTF);
+          }
+          break;
+        default:
+          continue;
         }
+        core(screenSurface);
+        SDL_UpdateWindowSurface(window);
       }
     }
   }
