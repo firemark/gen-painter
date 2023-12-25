@@ -5,14 +5,28 @@
 #include "art/image/image.h"
 #include "art/art.h"
 #include "esp32/epd.h"
+
 #include "esp_heap_caps.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static void draw_S1(struct Image *image);
 static void draw_M1(struct Image *image);
-static void draw_S2(struct Image *image);
+static void draw_S2(struct Imj samage *image);
 static void draw_M2(struct Image *image);
 
+static void _yield(void) {
+  vTaskDelay(1);
+}
+
+static void _art_draw(struct Image *image) {
+  art_draw(image);
+  _yield();
+}
+
 void draw_to_screen(void) {
+  _yield();
   struct Image *image = image_create();
   if (!image) {
     printf("Not enough memory to draw! available memory: %u; required: %u\n",
@@ -22,20 +36,20 @@ void draw_to_screen(void) {
 
   image->offset.x = 0;
   image->offset.y = 0;
-  art_draw(image);
+  _art_draw(image);
   draw_S2(image);
 
   image->offset.x = EPD_12in48B_S2_WIDTH;
-  art_draw(image);
+  _art_draw(image);
   draw_M2(image);
 
   image->offset.x = 0;
   image->offset.y = EPD_12in48B_S2_HEIGHT;
-  art_draw(image);
+  _art_draw(image);
   draw_M1(image);
 
   image->offset.x = EPD_12in48B_S2_WIDTH;
-  art_draw(image);
+  _art_draw(image);
   draw_S1(image);
 
   image_destroy(image);
@@ -57,6 +71,7 @@ static void draw_S1(struct Image *image) {
       EPD_S1_SendData(data);
     }
   }
+  _yield();
 
   // RED
   EPD_S1_SendCommand(0x13);
@@ -71,6 +86,7 @@ static void draw_S1(struct Image *image) {
       EPD_S1_SendData(data);
     }
   }
+  _yield();
 }
 
 static void draw_M1(struct Image *image) {
@@ -89,6 +105,7 @@ static void draw_M1(struct Image *image) {
       EPD_M1_SendData(data);
     }
   }
+  _yield();
 
   // RED
   EPD_M1_SendCommand(0x13);
@@ -103,6 +120,7 @@ static void draw_M1(struct Image *image) {
       EPD_M1_SendData(data);
     }
   }
+  _yield();
 }
 
 static void draw_S2(struct Image *image) {
@@ -121,6 +139,7 @@ static void draw_S2(struct Image *image) {
       EPD_S2_SendData(data);
     }
   }
+  _yield();
 
   // RED
   EPD_S2_SendCommand(0x13);
@@ -135,6 +154,7 @@ static void draw_S2(struct Image *image) {
       EPD_S2_SendData(data);
     }
   }
+  _yield();
 }
 
 static void draw_M2(struct Image *image) {
@@ -153,6 +173,7 @@ static void draw_M2(struct Image *image) {
       EPD_M2_SendData(data);
     }
   }
+  _yield();
 
   // RED
   EPD_M2_SendCommand(0x13);
@@ -167,4 +188,5 @@ static void draw_M2(struct Image *image) {
       EPD_M2_SendData(data);
     }
   }
+  _yield();
 }

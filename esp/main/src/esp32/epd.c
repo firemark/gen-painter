@@ -449,12 +449,12 @@ static inline void spi_write(uint8_t data)
   uint8_t i;
   for(i = 0; i < 8; i++) {
     gpio_set_level(EPD_SCK_PIN, 0);
-    _delay_us(10);
+    _delay_us(5);
     gpio_set_level(EPD_MOSI_PIN, data & (1 << 7) ? 1 : 0);
     data = data << 1;
-    _delay_us(10);
+    _delay_us(5);
     gpio_set_level(EPD_SCK_PIN, 1);
-    _delay_us(10);
+    _delay_us(5);
   }
 }
 

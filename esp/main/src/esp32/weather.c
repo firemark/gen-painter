@@ -1,9 +1,12 @@
 #include "esp32/weather.h"
+
+#include <stdio.h>
+#include <cJSON.h>
+
 #include "esp32/wifi.h"
+
 #include "esp_http_client.h"
 #include "keys.h"
-#include <cJSON.h>
-#include <stdio.h>
 
 #define MAX_HTTP_OUTPUT_BUFFER (4 * 1024)
 const char *PATH = "/data/2.5/forecast?units=metric&cnt=4" //
@@ -22,7 +25,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
   switch (evt->event_id) {
   case HTTP_EVENT_ON_DATA:
     if (buffer && buffer->len == 0) {
-      memset(buffer->buffer, 0, MAX_HTTP_OUTPUT_BUFFER);
+      memset(buffer->buffer, 0, MAX_HTTP_OUTPUT_BUFFER + 1);
     }
     if (esp_http_client_is_chunked_response(evt->client)) {
       break; // Not supported
@@ -37,6 +40,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
       if (copy_len) {
         memcpy(&buffer->buffer[buffer->len], evt->data, copy_len);
       }
+      buffer->len += copy_len;
     }
     break;
   default:
@@ -50,7 +54,6 @@ bool http_response(struct Buffer *buffer) {
     return false;
   }
 
-  esp_err_t err;
   esp_http_client_config_t config = {
       .host = "api.openweathermap.org",
       .path = PATH,
@@ -61,14 +64,19 @@ bool http_response(struct Buffer *buffer) {
   };
   esp_http_client_handle_t client = esp_http_client_init(&config);
 
-  if ((err = esp_http_client_perform(client) != ESP_OK)) {
+  esp_err_t err = esp_http_client_perform(client);
+  if (err != ESP_OK) {
     printf("Connection error: %d\r\n", err);
+    esp_http_client_cleanup(client);
     return false;
   }
 
   int status = esp_http_client_get_status_code(client);
 
   printf("HTTP CODE: %d\n", status);
+
+  esp_http_client_cleanup(client);
+
   return true;
 }
 
@@ -98,13 +106,17 @@ static enum WeatherType weather_id_to_type(int weather_id) {
 }
 
 bool download_weather_data(struct ArtData *data) {
-  struct Buffer buffer = {.buffer = {0}, .len = 0};
+  struct Buffer * buffer = malloc(sizeof(struct Buffer));
+  buffer->len = 0;
 
-  if (!http_response(&buffer)) {
+  if (!http_response(buffer)) {
+    free(buffer);
     return false;
   }
 
-  cJSON *json = cJSON_ParseWithLength(buffer.buffer, buffer.len);
+  cJSON *json = cJSON_ParseWithLength(buffer->buffer, buffer->len);
+  free(buffer);
+
   if (!json) {
     const char *error_ptr = cJSON_GetErrorPtr();
     if (error_ptr) {

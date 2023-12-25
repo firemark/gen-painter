@@ -21,9 +21,9 @@ bool sync_time(void) {
   esp_sntp_init();
   // 24 hours, I don't need smooth synchronization because
   // I need only is to get current hour.
-  esp_sntp_set_sync_interval(86400000L);
-  esp_sntp_restart();
+  esp_sntp_set_sync_interval(86400000ULL);
   esp_sntp_setservername(0, "pool.ntp.org");
+  esp_sntp_restart();
 
   uint8_t count = 0;
   do {
@@ -72,7 +72,7 @@ bool check_time(uint16_t *minute) {
 
   if (timeinfo.tm_hour < 6) {
     printf("Screen doesn't work during midnight!\r\n");
-    return false;
+    // return false;
   }
 
   *minute = timeinfo.tm_hour * 60 + timeinfo.tm_min;
