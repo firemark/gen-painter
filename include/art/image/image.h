@@ -1,15 +1,12 @@
 #pragma once
 #include <stdint.h>
 
-#define IMAGE_WIDTH 656
-#define IMAGE_HEIGHT 492
+#define IMAGE_WIDTH 1304
+#define IMAGE_HEIGHT 984
 #define BUFFER_CHUNK_COUNT 4
 #define IMAGE_HEIGHT_CHUNK (IMAGE_HEIGHT / BUFFER_CHUNK_COUNT)
 #define IMAGE_SIZE (IMAGE_HEIGHT * (IMAGE_WIDTH >> 2))
 #define IMAGE_SIZE_CHUNK (IMAGE_HEIGHT_CHUNK * (IMAGE_WIDTH >> 2))
-
-#define FULL_IMAGE_WIDTH 1304
-#define FULL_IMAGE_HEIGHT 984
 
 #define BITMAP_WIDTH 16
 #define BITMAP_HEIGHT 16
@@ -36,7 +33,6 @@ struct Circle {
 };
 
 struct Image {
-  struct Point offset;
   // Because ESP32 doesn't have virtual addresses,
   // It's required to make smaller chunks in different parts of memory.
   uint8_t *buffer[BUFFER_CHUNK_COUNT];

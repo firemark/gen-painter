@@ -18,11 +18,11 @@ void sun_draw(struct Image *image) {
 }
 
 static inline float angle_to_x(float angle) {
-  return FULL_IMAGE_WIDTH * (0.8 * sin(angle / 2.0) + 0.1);
+  return IMAGE_WIDTH * (0.8 * sin(angle / 2.0) + 0.1);
 }
 
 static inline float angle_to_y(float angle) {
-  return FULL_IMAGE_HEIGHT - FULL_IMAGE_HEIGHT * (0.5 * sin(angle) + 0.2);
+  return IMAGE_HEIGHT - IMAGE_HEIGHT * (0.5 * sin(angle) + 0.2);
 }
 
 static inline uint8_t angle_to_threshold(float angle) {

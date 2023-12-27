@@ -72,7 +72,7 @@ bool check_time(uint16_t *minute) {
 
   if (timeinfo.tm_hour < 6) {
     printf("Screen doesn't work during midnight!\r\n");
-    // return false;
+    return false;
   }
 
   *minute = timeinfo.tm_hour * 60 + timeinfo.tm_min;

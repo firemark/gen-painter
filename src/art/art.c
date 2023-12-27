@@ -22,8 +22,7 @@ enum Color _branches_color;
 static void _rain(struct Image *image) {
   uint16_t density = _data.rain_density < 2000 ? _data.rain_density : 2000;
   for (uint16_t i = 0; i < density; i++) {
-    struct Point p0 = {image->offset.x + random_int(IMAGE_WIDTH),
-                       image->offset.y + random_int(IMAGE_HEIGHT)};
+    struct Point p0 = {random_int(IMAGE_WIDTH), random_int(IMAGE_HEIGHT)};
     struct Point p1 = {p0.x - 8, p0.y + 8};
     struct Line line = {
         .p0 = p0,
@@ -38,8 +37,7 @@ static void _rain(struct Image *image) {
 static void _snow(struct Image *image) {
   uint16_t density = _data.snow_density < 2000 ? _data.snow_density : 2000;
   for (uint16_t i = 0; i < density; i++) {
-    struct Point p = {image->offset.x + random_int(IMAGE_WIDTH),
-                      image->offset.y + random_int(IMAGE_HEIGHT)};
+    struct Point p = {random_int(IMAGE_WIDTH), random_int(IMAGE_HEIGHT)};
     for (int8_t j = -1; j <= 1; j++) {
       struct Line line = {
           .p0 = {p.x + 4 * j, p.y},

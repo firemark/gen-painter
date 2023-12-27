@@ -26,17 +26,17 @@ uint8_t grass_init(void) {
 void grass_reset(void) { _grass_count = 0; }
 
 void grass_generate(void) {
-  _grass_generate(FULL_IMAGE_HEIGHT);
-  _grass_generate(FULL_IMAGE_HEIGHT - 20);
-  _grass_generate(FULL_IMAGE_HEIGHT - 40);
-  _grass_generate(FULL_IMAGE_HEIGHT - 60);
+  _grass_generate(IMAGE_HEIGHT);
+  _grass_generate(IMAGE_HEIGHT - 20);
+  _grass_generate(IMAGE_HEIGHT - 40);
+  _grass_generate(IMAGE_HEIGHT - 60);
   printf("total grass: %d\n", _grass_count);
 }
 
 static void _grass_generate(int16_t y) {
 
   int16_t x = 0;
-  while (x < FULL_IMAGE_WIDTH && _grass_count < GRASS_SIZE - 4) {
+  while (x < IMAGE_WIDTH && _grass_count < GRASS_SIZE - 4) {
     int16_t yy = y - 16 + random_int(32);
     x += 10 - 3 + random_int(6);
     int16_t r = -40 + random_int(80);

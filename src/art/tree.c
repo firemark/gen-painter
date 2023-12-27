@@ -44,8 +44,8 @@ void tree_reset(void) {
 
 void tree_generate(void) {
   struct Point p = {
-      FULL_IMAGE_WIDTH / 2 + random_int(200) - 100,
-      FULL_IMAGE_HEIGHT - 60,
+      IMAGE_WIDTH / 2 + random_int(200) - 100,
+      IMAGE_HEIGHT - 60,
   };
   uint16_t w = 200 + random_int(50);
   float rot = random_range(-50, 50);

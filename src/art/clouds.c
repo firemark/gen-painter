@@ -38,8 +38,8 @@ void clouds_generate(void) {
     _clouds[i] = (struct Cloud){
         .point =
             {
-                .x = random_int(FULL_IMAGE_WIDTH),
-                .y = random_int(FULL_IMAGE_HEIGHT - 100),
+                .x = random_int(IMAGE_WIDTH),
+                .y = random_int(IMAGE_HEIGHT - 100),
             },
         .width = 8 + random_int(8),
         .height = 4 + random_int(3),

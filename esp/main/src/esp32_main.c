@@ -25,7 +25,7 @@ uint32_t art_random() { return esp_random(); }
 
 void app_main(void) {
   struct ArtData data;
-  printf("Available memory: %lu\n",
+  printf("Available memory: %u\n",
          heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
 
   printf("Screen init\r\n");
@@ -49,7 +49,7 @@ void app_main(void) {
   printf("Art Init\r\n");
   if (!art_init()) {
     printf("Not enough memory to initialize art.\r\n");
-    printf("Available memory: %lu\n",
+    printf("Available memory: %u\n",
            heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
     return finish();
   }

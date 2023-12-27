@@ -9,15 +9,16 @@
 #include "art/art.h"
 #include "art/art_data.h"
 
-#define SCREEN_WIDTH 1304
-#define SCREEN_HEIGHT 984
+#define SCREEN_WIDTH IMAGE_WIDTH
+#define SCREEN_HEIGHT IMAGE_HEIGHT
 
 uint32_t art_random() { return rand(); }
 
-SDL_Surface *draw(struct Image *image, uint16_t w, uint16_t h) {
-  SDL_Surface *surface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
-  for (uint16_t y = 0; y < h; y++)
-    for (uint16_t x = 0; x < w; x++) {
+SDL_Surface *draw(struct Image *image) {
+  SDL_Surface *surface =
+      SDL_CreateRGBSurface(0, IMAGE_WIDTH, IMAGE_HEIGHT, 32, 0, 0, 0, 0);
+  for (uint16_t y = 0; y < IMAGE_HEIGHT; y++)
+    for (uint16_t x = 0; x < IMAGE_WIDTH; x++) {
       enum Color color = image_get(image, x, y);
       uint32_t *pixel =
           (uint32_t *)((uint8_t *)surface->pixels + y * surface->pitch +
@@ -66,37 +67,25 @@ static struct ArtData _data = {
 };
 
 void core(SDL_Surface *screen_surface) {
-  printf("clouds: %3d; rain: %4d; snow: %4d; hour: %02d:%02d\n", _data.clouds_count,
-         _data.rain_density, _data.snow_density, _data.minute / 60, _data.minute % 60);
+  printf("clouds: %3d; rain: %4d; snow: %4d; hour: %02d:%02d\n",
+         _data.clouds_count, _data.rain_density, _data.snow_density,
+         _data.minute / 60, _data.minute % 60);
 
   struct Image *image = image_create();
-  image->offset.x = 0;
-  image->offset.y = 0;
 
   art_make(_data);
+  art_draw(image);
 
-  uint16_t W[2] = {648, 656};
-  uint16_t H[2] = {492, 492};
+  SDL_Rect dstrect = {
+      .x = 0,
+      .y = 0,
+      .w = IMAGE_WIDTH,
+      .h = IMAGE_HEIGHT,
+  };
 
-  for (uint8_t y = 0; y < 2; y++) {
-    for (uint8_t x = 0; x < 2; x++) {
-      art_draw(image);
-
-      SDL_Rect dstrect = {
-          .x = image->offset.x,
-          .y = image->offset.y,
-          .w = W[x],
-          .h = H[y],
-      };
-
-      SDL_Surface *surface = draw(image, W[x], H[y]);
-      SDL_BlitSurface(surface, NULL, screen_surface, &dstrect);
-      SDL_FreeSurface(surface);
-      image->offset.x += W[x];
-    }
-    image->offset.y += H[y];
-    image->offset.x = 0;
-  }
+  SDL_Surface *surface = draw(image);
+  SDL_BlitSurface(surface, NULL, screen_surface, &dstrect);
+  SDL_FreeSurface(surface);
 
   image_destroy(image);
 }

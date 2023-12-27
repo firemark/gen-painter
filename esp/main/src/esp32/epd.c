@@ -53,9 +53,16 @@ static void EPD_SetLut(void);
 #define EPD_VERSION 1
 #define _DC(x) (1ULL << x)
 
-#define _delay_us(x) ets_delay_us(x)
 #define _delay_ms(x) ets_delay_us(1000 * (x))
 
+void _delay_wtf(uint16_t xus) {
+  uint16_t i;
+  while (xus) {
+    for (i = 0; i < 30; i++)
+      ;
+    xus--;
+  }
+}
 
 /******************************************************************************
 function :	Initialize the e-Paper register
@@ -444,17 +451,16 @@ or:
     Data : Write data
 ******************************************************************************/
 
-static inline void spi_write(uint8_t data)                                                        
-{
+static inline void spi_write(uint8_t data) {
   uint8_t i;
-  for(i = 0; i < 8; i++) {
+  for (i = 0; i < 8; i++) {
     gpio_set_level(EPD_SCK_PIN, 0);
-    _delay_us(5);
+    _delay_wtf(5);
     gpio_set_level(EPD_MOSI_PIN, data & (1 << 7) ? 1 : 0);
     data = data << 1;
-    _delay_us(5);
+    _delay_wtf(5);
     gpio_set_level(EPD_SCK_PIN, 1);
-    _delay_us(5);
+    _delay_wtf(5);
   }
 }
 
@@ -512,6 +518,7 @@ static void EPD_M1M2_SendCommand(uint8_t Reg) {
   gpio_set_level(EPD_M1S1_DC_PIN, 1);
   gpio_set_level(EPD_M2S2_DC_PIN, 1);
 }
+
 static void EPD_M1M2_SendData(uint8_t Data) {
   gpio_set_level(EPD_M1_CS_PIN, 0);
   gpio_set_level(EPD_M2_CS_PIN, 0);

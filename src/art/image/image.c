@@ -268,10 +268,10 @@ static inline void _image_draw_line(struct Image *image, enum Color color,
 }
 
 void image_draw_line(struct Image *image, struct Line *line) {
-  int16_t x0 = line->p0.x - image->offset.x;
-  int16_t x1 = line->p1.x - image->offset.x;
-  int16_t y0 = line->p0.y - image->offset.y;
-  int16_t y1 = line->p1.y - image->offset.y;
+  int16_t x0 = line->p0.x;
+  int16_t x1 = line->p1.x;
+  int16_t y0 = line->p0.y;
+  int16_t y1 = line->p1.y;
 
   int16_t dx = x1 - x0;
   int16_t dy = y1 - y0;
@@ -351,8 +351,8 @@ void image_draw_line(struct Image *image, struct Line *line) {
 
 void image_draw_circle(struct Image *image, struct Circle *circle) {
   int16_t t1 = circle->d / 16, t2;
-  int16_t x0 = circle->p.x - image->offset.x;
-  int16_t y0 = circle->p.y - image->offset.y;
+  int16_t x0 = circle->p.x;
+  int16_t y0 = circle->p.y;
 
   int16_t x = circle->d;
   int16_t y = 0;
@@ -389,9 +389,9 @@ void image_draw_circle(struct Image *image, struct Circle *circle) {
 
 void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,
                         enum Color color, struct Point p) {
-  int16_t x0 = p.x - BITMAP_WIDTH / 2 - image->offset.x;
+  int16_t x0 = p.x - BITMAP_WIDTH / 2;
   int16_t x1 = x0 + BITMAP_WIDTH - 1;
-  int16_t y0 = p.y - BITMAP_HEIGHT / 2 - image->offset.y;
+  int16_t y0 = p.y - BITMAP_HEIGHT / 2;
   int16_t y1 = y0 + BITMAP_HEIGHT - 1;
 
   CLIP_FINAL(x0, IMAGE_WIDTH - 1);
@@ -449,10 +449,10 @@ static inline uint8_t _threshold(uint8_t threshold, uint16_t z) {
 
 void image_draw_rectangle(struct Image *image, enum Color color,
                           uint8_t threshold, struct Point p0, struct Point p1) {
-  int16_t x0 = p0.x - image->offset.x;
-  int16_t x1 = p1.x - image->offset.x;
-  int16_t y0 = p0.y - image->offset.y;
-  int16_t y1 = p1.y - image->offset.y;
+  int16_t x0 = p0.x;
+  int16_t x1 = p1.x;
+  int16_t y0 = p0.y;
+  int16_t y1 = p1.y;
 
   if (y0 > y1) {
     int16_t y = y1;
@@ -482,8 +482,8 @@ void image_draw_rectangle(struct Image *image, enum Color color,
 void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
                                  uint8_t threshold, enum Color background) {
   int16_t t1 = circle->d / 16, t2;
-  int16_t x0 = circle->p.x - image->offset.x;
-  int16_t y0 = circle->p.y - image->offset.y;
+  int16_t x0 = circle->p.x;
+  int16_t y0 = circle->p.y;
 
   int16_t x = circle->d;
   int16_t y = 0;
