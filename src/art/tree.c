@@ -13,15 +13,6 @@
 #define BEZIER_LINES_HIGH 16
 #define BEZIER_LINES_LOW 6
 
-struct Tree {
-  float main_branch_ratio;
-  float side_branch_ratio;
-  float curvy_ratio;
-  uint8_t top_start;
-  float top_rot;
-  float bottom_rot;
-};
-
 static uint16_t _branches_count;
 static uint16_t _leaves_count;
 
@@ -42,23 +33,10 @@ void tree_reset(void) {
   _leaves_count = 0;
 }
 
-void tree_generate(void) {
-  struct Point p = {
-      IMAGE_WIDTH / 2 + random_int(200) - 100,
-      IMAGE_HEIGHT - 60,
-  };
-  uint16_t w = 200 + random_int(50);
+void tree_generate(struct Point p, uint16_t height, struct Tree *tree) {
   float rot = random_range(-50, 50);
 
-  struct Tree tree = {
-      .main_branch_ratio = random_range(600, 900),
-      .side_branch_ratio = random_range(500, 800),
-      .curvy_ratio = random_range(0, 1000),
-      .top_start = 2 + random_int(2),
-      .top_rot = random_range(300, 900),
-      .bottom_rot = random_range(100, 400),
-  };
-  _tree(6, &tree, p, w, rot);
+  _tree(6, tree, p, height, rot);
 
   printf("total branches: %d\n", _branches_count);
   printf("total leafes: %d\n", _leaves_count);
