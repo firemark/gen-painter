@@ -95,7 +95,6 @@ void art_make(struct ArtData data) {
   _data = data;
   _reset();
   _random_colors();
-  clouds_generate();
   landscape_generate();
 }
 

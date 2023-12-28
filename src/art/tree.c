@@ -37,9 +37,6 @@ void tree_generate(struct Point p, uint16_t height, struct Tree *tree) {
   float rot = random_range(-50, 50);
 
   _tree(6, tree, p, height, rot);
-
-  printf("total branches: %d\n", _branches_count);
-  printf("total leafes: %d\n", _leaves_count);
 }
 
 void tree_draw_back(struct Image *image) {

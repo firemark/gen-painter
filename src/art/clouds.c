@@ -15,8 +15,7 @@ struct Cloud {
 };
 
 static uint8_t _i;
-
-static struct Cloud *_clouds;
+static enum Color _bg_color;
 
 static void _draw_background_cloud_fancy(struct Image *image,
                                          struct Cloud *cloud, uint8_t treshold,
@@ -27,31 +26,21 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
                                    uint8_t step);
 
 uint8_t clouds_init(void) {
-  _clouds = malloc(sizeof(struct Cloud) * CLOUDS_SIZE);
-  return _clouds != NULL;
-}
-
-void clouds_generate(void) {
-  uint8_t clouds_count =
-      _data.clouds_count < CLOUDS_SIZE ? _data.clouds_count : CLOUDS_SIZE;
-  for (uint8_t i = 0; i < clouds_count; i++) {
-    _clouds[i] = (struct Cloud){
-        .point =
-            {
-                .x = random_int(IMAGE_WIDTH),
-                .y = random_int(IMAGE_HEIGHT - 100),
-            },
-        .width = 8 + random_int(8),
-        .height = 4 + random_int(3),
-    };
-  }
+  _bg_color = _background_color == WHITE ? BLACK : _background_color;
 }
 
 void clouds_draw(struct Image *image) {
-  uint8_t clouds_count =
-      _data.clouds_count < CLOUDS_SIZE ? _data.clouds_count : CLOUDS_SIZE;
-  for (uint8_t i = 0; i < clouds_count; i++) {
-    _draw_background_cloud(image, &_clouds[i], 0);
+  uint8_t i;
+  uint8_t clouds_count = _data.clouds_count;
+  for (i = 0; i < clouds_count; i++) {
+    struct Cloud cloud = {
+        .point.x = random_int(IMAGE_WIDTH),
+        .point.y = random_int(IMAGE_HEIGHT - 100),
+        .width = 8 + random_int(8),
+        .height = 4 + random_int(3),
+    };
+
+    _draw_background_cloud(image, &cloud, 0);
   }
 }
 
@@ -68,9 +57,7 @@ static void _draw_background_cloud_bar(struct Image *image, int16_t x_start,
         .color = WHITE,
     };
 
-    image_draw_circle_threshold(image, &circle, threshold,
-                                _background_color == WHITE ? BLACK
-                                                           : _background_color);
+    image_draw_circle_threshold(image, &circle, threshold, _bg_color);
   }
 }
 
@@ -99,9 +86,7 @@ static void _draw_background_cloud_fancy(struct Image *image,
           .d = size + random_next(&_j) / 2,
           .color = WHITE,
       };
-      image_draw_circle_threshold(
-          image, &circle, treshold,
-          _background_color == WHITE ? BLACK : _background_color);
+      image_draw_circle_threshold(image, &circle, treshold, _bg_color);
     }
 
     y += random_next(&_j) + 1;
