@@ -12,7 +12,7 @@
 #define BITMAP_HEIGHT 16
 #define BITMAP_SIZE (BITMAP_HEIGHT * (BITMAP_WIDTH >> 3))
 
-enum Color { WHITE = 0b00, BLACK = 0b01, RED = 0b10 };
+enum Color { WHITE = 0b00, BLACK = 0b01, RED = 0b10, TRANSPARENT = 0b11 };
 
 struct Point {
   int16_t x;
@@ -43,20 +43,25 @@ struct Bitmap {
 };
 
 struct Image *image_create();
-void image_destroy(struct Image * image);
+void image_destroy(struct Image *image);
 void image_clear(struct Image *image, enum Color color);
+void image_draw_hline(struct Image *image, int16_t y, int16_t x0, int16_t x1,
+                      enum Color color, uint8_t threshold, enum Color bg_color);
 void image_draw_line(struct Image *image, struct Line *line);
 void image_draw_circle(struct Image *image, struct Circle *circle);
 void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,
                         enum Color color, struct Point p);
-void image_draw_rectangle(struct Image *image, enum Color color, uint8_t threshold, struct Point p0, struct Point p1);
+void image_draw_rectangle(struct Image *image, enum Color color,
+                          uint8_t threshold, enum Color bg_color,
+                          struct Point p0, struct Point p1);
 void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
                                  uint8_t threshold, enum Color background);
 
 static inline enum Color image_get(struct Image *image, uint16_t x,
                                    uint16_t y) {
   uint8_t chunk = y / IMAGE_HEIGHT_CHUNK;
-  uint32_t index = (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
+  uint32_t index =
+      (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
   uint8_t byte = image->buffer[chunk][index];
 
   switch (x & 0b11) {

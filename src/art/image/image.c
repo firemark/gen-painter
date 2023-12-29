@@ -28,6 +28,8 @@
     }                                                                          \
   }
 
+static inline uint8_t _threshold(uint8_t threshold, uint16_t z);
+
 struct Image *image_create() {
   struct Image *image = (struct Image *)malloc(sizeof(struct Image));
   if (image == NULL) {
@@ -35,11 +37,11 @@ struct Image *image_create() {
   }
 
   for (uint8_t i = 0; i < BUFFER_CHUNK_COUNT; i++) {
-    image->buffer[i] = (uint8_t*)malloc(IMAGE_SIZE_CHUNK);
+    image->buffer[i] = (uint8_t *)malloc(IMAGE_SIZE_CHUNK);
   }
 
   for (uint8_t i = 0; i < BUFFER_CHUNK_COUNT; i++) {
-    if(image->buffer[i] == NULL) {
+    if (image->buffer[i] == NULL) {
       image_destroy(image);
       return NULL;
     }
@@ -72,11 +74,15 @@ void image_clear(struct Image *image, enum Color color) {
 
 static inline void _image_set_pixel(struct Image *image, enum Color color,
                                     uint16_t x, uint16_t y) {
+  if (color == TRANSPARENT) {
+    return;
+  }
   if (x >= IMAGE_WIDTH || y >= IMAGE_HEIGHT) {
     return;
   }
   uint8_t chunk = y / IMAGE_HEIGHT_CHUNK;
-  uint32_t index = (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
+  uint32_t index =
+      (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
   uint8_t *byte = &image->buffer[chunk][index];
   switch (x & 0b11) {
   case 0:
@@ -267,6 +273,29 @@ static inline void _image_draw_line(struct Image *image, enum Color color,
   }
 }
 
+void image_draw_hline(struct Image *image, int16_t y, int16_t x0, int16_t x1,
+                      enum Color color, uint8_t threshold,
+                      enum Color bg_color) {
+  int16_t x;
+  if (x0 > x1) {
+    // Swap.
+    int16_t z = x0;
+    x0 = x1;
+    x1 = z;
+  }
+  uint16_t yy = y * y;
+
+  CLIP(x0, x1, IMAGE_WIDTH - 1);
+  for (x = x0; x <= x1; x++) {
+    uint16_t z = x * x + yy;
+    if (_threshold(threshold, z)) {
+      _image_set_pixel(image, color, x, y);
+    } else {
+      _image_set_pixel(image, bg_color, x, y);
+    }
+  }
+}
+
 void image_draw_line(struct Image *image, struct Line *line) {
   int16_t x0 = line->p0.x;
   int16_t x1 = line->p1.x;
@@ -448,7 +477,7 @@ static inline uint8_t _threshold(uint8_t threshold, uint16_t z) {
 }
 
 void image_draw_rectangle(struct Image *image, enum Color color,
-                          uint8_t threshold, struct Point p0, struct Point p1) {
+                          uint8_t threshold, enum Color bg_color, struct Point p0, struct Point p1) {
   int16_t x0 = p0.x;
   int16_t x1 = p1.x;
   int16_t y0 = p0.y;
@@ -474,6 +503,8 @@ void image_draw_rectangle(struct Image *image, enum Color color,
       uint16_t z = x * x + y * y;
       if (_threshold(threshold, z)) {
         _image_set_pixel(image, color, x, y);
+      } else {
+        _image_set_pixel(image, bg_color, x, y);
       }
     }
   }

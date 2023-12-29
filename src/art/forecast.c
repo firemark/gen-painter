@@ -18,9 +18,9 @@ static void _draw_icon(struct Image *image, struct Point *p,
                        enum WeatherType weather, uint8_t hour);
 
 static void _draw_background(struct Image *image, int16_t x, int16_t width) {
-  image_draw_rectangle(image, _branches_color, 128 + 32, (struct Point){x, 0},
-                       (struct Point){x + width, 128});
-  image_draw_rectangle(image, _background_color, 128 + 32,
+  image_draw_rectangle(image, _branches_color, 128 + 32, TRANSPARENT,
+                       (struct Point){x, 0}, (struct Point){x + width, 128});
+  image_draw_rectangle(image, _background_color, 128 + 32, TRANSPARENT,
                        (struct Point){x + 4, 4},
                        (struct Point){x + width - 4, 128 - 4});
 }
@@ -337,7 +337,7 @@ static void _draw_cloud(struct Image *image, struct Point p, uint8_t s,
       .d = s,
   };
 
-  image_draw_rectangle(image, _branches_color, t, p0, p1);
+  image_draw_rectangle(image, _branches_color, t, TRANSPARENT, p0, p1);
   image_draw_circle_threshold(image, &down_left, t, _background_color);
   image_draw_circle_threshold(image, &down_right, t, _background_color);
   image_draw_circle_threshold(image, &up_left, t, _background_color);
@@ -486,7 +486,7 @@ static void _draw_icon(struct Image *image, struct Point *p,
     }
     break;
   case WEATHER_FOG:
-    image_draw_rectangle(image, _branches_color, 128 - 64,
+    image_draw_rectangle(image, _branches_color, 128 - 64, TRANSPARENT,
                          (struct Point){p->x + 12, p->y + 12},
                          (struct Point){p->x + 120, p->y + 100});
     _draw_cloud(image, (struct Point){p->x + 12, p->y + 10}, 27, 128 - 32);
