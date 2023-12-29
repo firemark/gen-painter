@@ -1,6 +1,7 @@
 #include "art/landscape.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "art/image/image_adv.h"
@@ -78,8 +79,8 @@ static void _draw_small_peak(struct Image *image, int16_t x_center,
   int16_t w = width / ratio + random_int(width / (ratio * 2));
   int16_t h = height / ratio + random_int(height / (ratio * 2));
   int16_t abs_shift = abs(shift);
-  if (abs_shift + w / 2 > width / 2) {
-    w = width - 2 * abs_shift;
+  if (abs_shift + w / 2 > width / 2 - 32) {
+    w = width - 2 * (abs_shift + 32);
   }
   int16_t sign = shift > 0 ? 1 : -1;
   int16_t xa = abs_shift - sign * w / 2;
@@ -160,6 +161,7 @@ static void _draw_peak(struct Image *image, int16_t x_center, int16_t width,
 
   // Generate base of the left side
   // from the bottom center to the bottom left.
+  int base_dark_index = dark_index;
   if (dark_base_points_size > 0) {
     int x_dark_base = x;
     int span_left_base = (y_base_left - y_base_mid) / dark_base_points_size;
@@ -175,6 +177,7 @@ static void _draw_peak(struct Image *image, int16_t x_center, int16_t width,
 
   // Generate base of the right side
   // from the bottom center to the bottom right.
+  int base_light_index = light_index;
   if (light_base_points_size > 0) {
     int x_light_base = x;
     int span_right_base = (y_base_right - y_base_mid) / light_base_points_size;
@@ -200,8 +203,41 @@ static void _draw_peak(struct Image *image, int16_t x_center, int16_t width,
         (struct Point){x + random_int_b(x_rand), y + random_int_b(y_rand)};
   }
 
-  _polyfill_mountain(image, dark_points, dark_points_size, 96u);
-  _polyfill_mountain(image, light_points, light_points_size, 128u);
+  uint8_t t0 = 96u;
+  uint8_t t1 = 128u;
+
+  if (_background_color == WHITE) {
+    t0 = 128u;
+    t1 = 96u;
+  }
+
+  _polyfill_mountain(image, dark_points, dark_points_size, t0);
+  _polyfill_mountain(image, light_points, light_points_size, t1);
+
+  struct Point *dark_peak = &dark_points[dark_peak_points_size - 1];
+  struct Point *light_peak = &light_points[light_points_size - 4];
+  struct Point vec1 = {(dark_peak->x - light_peak->x) / 2, (dark_peak->y - light_peak->y) / 2};
+  struct Point vec2 = {(dark_peak->x - light_peak->x) / 3, (dark_peak->y - light_peak->y) / 3};
+
+  for(i = 1; i < edge_points_size; i++) {
+    struct Point a = dark_points[dark_peak_points_size + i - 2];
+    struct Point b = dark_points[dark_peak_points_size + i - 1];
+    struct Point d = {b.x - a.x, b.y - a.y};
+    int j;
+    int s = d.y / 12;
+    for (j=0; j < s; j++) {
+      struct Point point = {a.x + d.x * j / s, a.y + d.y * j / s};
+      struct Line line = {
+        .color=_background_color == WHITE ? _leaves_color : _background_color,
+        .thickness=1,
+        .p0=point,
+        .p1.x=point.x - (j % 2 ? vec1.x : vec2.x),
+        .p1.y=point.y - (j % 2 ? vec1.y : vec2.y),
+      };
+      image_draw_line(image, &line);
+    }
+  }
+
   free(dark_points);
   free(light_points);
 }

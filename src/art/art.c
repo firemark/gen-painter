@@ -107,8 +107,8 @@ static void _trees_setup() {
       .top_rot = random_range(300, 900),
       .bottom_rot = random_range(100, 400),
   };
-  _tree_config.tree_height = 100;
   _tree_config.count = 1 + random_int(3);
+  _tree_config.tree_height = 200 - 30 * _tree_config.count;
   _tree_config.x_span = 300 + random_int(200);
   _tree_config.x = IMAGE_WIDTH / 2 - random_int(200);
   _tree_config.x -= _tree_config.x_span * (1 + _tree_config.count / 2);
