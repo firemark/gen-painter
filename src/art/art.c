@@ -89,22 +89,17 @@ static void _reset(void) {
   random_shuffle_array();
 }
 
-uint8_t art_init(void) { return tree_init() && clouds_init(); }
+static int16_t _horizont_height;
+static struct TreeConfig {
+  struct Tree tree;
+  int16_t tree_height;
+  int16_t count;
+  int16_t x_span;
+  int16_t x;
+} _tree_config;
 
-void art_make(struct ArtData data) {
-  _data = data;
-  _reset();
-  _random_colors();
-  landscape_generate();
-}
-
-static void _draw_trees(struct Image *image) {
-  int i = 0;
-
-  int16_t x = IMAGE_WIDTH / 2 + 100 - random_int(200);
-  int16_t x_span = random_int(100) + 300;
-  int16_t y = IMAGE_HEIGHT - 80;
-  struct Tree tree = {
+static void _trees_setup() {
+  _tree_config.tree = (struct Tree){
       .main_branch_ratio = random_range(600, 900),
       .side_branch_ratio = random_range(500, 800),
       .curvy_ratio = random_range(0, 1000),
@@ -112,16 +107,33 @@ static void _draw_trees(struct Image *image) {
       .top_rot = random_range(300, 900),
       .bottom_rot = random_range(100, 400),
   };
-  uint16_t tree_height = 100;
+  _tree_config.tree_height = 100;
+  _tree_config.count = 1 + random_int(3);
+  _tree_config.x_span = 300 + random_int(200);
+  _tree_config.x = IMAGE_WIDTH / 2 - random_int(200);
+  _tree_config.x -= _tree_config.x_span * (1 + _tree_config.count / 2);
+}
 
-  for (i = 0; i < 3; i++) {
-    struct Point point = {x + x_span * (i - 1), y};
-    tree_generate(point, tree_height + random_int(50), &tree);
-    tree_draw_back(image);
-    tree_draw_branches(image);
-    tree_draw_front(image);
-    tree_reset();
-  }
+uint8_t art_init(void) { return tree_init() && clouds_init(); }
+
+void art_make(struct ArtData data) {
+  _data = data;
+  _reset();
+  _random_colors();
+  _trees_setup();
+  _horizont_height = landscape_generate();
+}
+
+static void _draw_tree(struct Image *image, int y) {
+  _tree_config.x += _tree_config.x_span;
+  _tree_config.count--;
+  struct Point point = {_tree_config.x, y};
+  int16_t tree_height = _tree_config.tree_height + random_int(50);
+  tree_generate(point, tree_height, &_tree_config.tree);
+  tree_draw_back(image);
+  tree_draw_branches(image);
+  tree_draw_front(image);
+  tree_reset();
 }
 
 void art_draw(struct Image *image) {
@@ -133,14 +145,15 @@ void art_draw(struct Image *image) {
   clouds_draw(image);
   landscape_draw(image);
 
-  grass_draw(image, IMAGE_HEIGHT - 100);
-  grass_draw(image, IMAGE_HEIGHT - 60);
-  grass_draw(image, IMAGE_HEIGHT - 80);
-  _draw_trees(image);
-  grass_draw(image, IMAGE_HEIGHT - 60);
-  grass_draw(image, IMAGE_HEIGHT - 40);
-  grass_draw(image, IMAGE_HEIGHT - 20);
-  grass_draw(image, IMAGE_HEIGHT);
+  int16_t y_min = IMAGE_HEIGHT - _horizont_height + 20;
+  int16_t y_max = IMAGE_HEIGHT + 20;
+  int16_t y;
+  for (y = y_min; y <= y_max; y += 20) {
+    grass_draw(image, y);
+    if (random_int(32) > 20 && _tree_config.count > 0) {
+      _draw_tree(image, y);
+    }
+  }
 
   _rain(image);
   _snow(image);
