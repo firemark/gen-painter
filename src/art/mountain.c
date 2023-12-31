@@ -65,11 +65,11 @@ static void _draw_small_peak(struct Peak *peak, int16_t ratio, int16_t shift) {
   int16_t h_right = (peak->height * (xb - peak->width / 2) / peak->width) + 20 +
                     random_int(20);
   struct Peak new_peak = {
-    .image=peak->image,
-    .x_center=peak->x_center + shift,
-    .y=peak->y,
-    .width=w,
-    .height=h,
+      .image = peak->image,
+      .x_center = peak->x_center + shift,
+      .y = peak->y,
+      .width = w,
+      .height = h,
   };
   _draw_peak(&new_peak, peak->y + h_left, peak->y + h_right, true);
 }
@@ -108,10 +108,9 @@ static void _polyfill_mountain(struct Image *image,
            _background_color);
 }
 
-static void _draw_mountain_strokes(struct Image *image,
-                                   struct MountainPoints *dark,
-                                   uint8_t start_index, struct Point *dark_peak,
-                                   struct Point *light_peak) {
+static void _draw_mountain_strokes(struct Peak *peak, int16_t count,
+                                   struct Point *dark_peak,
+                                   struct Point *light_peak, enum Color color) {
   uint8_t i;
   struct Point diff = {(dark_peak->x - light_peak->x),
                        (dark_peak->y - light_peak->y)};
@@ -120,23 +119,26 @@ static void _draw_mountain_strokes(struct Image *image,
       {diff.x / 3, diff.y / 3},
   };
 
-  for (i = 1; i < dark->edge_size; i++) {
-    struct Point a = dark->points[start_index + i - 1];
-    struct Point b = dark->points[start_index + i];
-    struct Point d = {b.x - a.x, b.y - a.y};
+  for (i = 0; i < count; i++) {
     int j;
-    int s = d.y / 12;
+    int s = -diff.y / 32;
+    int16_t rh = random_int(peak->height * 6 / 7);
+    int16_t rw = random_int(peak->width * rh / peak->height);
+    if (diff.x > 0) {
+      rw = -rw;
+    }
+    struct Point r = {dark_peak->x + rw / 2, dark_peak->y + rh};
     for (j = 0; j < s; j++) {
-      struct Point point = {a.x + d.x * j / s, a.y + d.y * j / s};
+      struct Point point = {random_int(10) + r.x - diff.y * j / s,
+                            random_int(10) + r.y - diff.x * j / s};
       struct Line line = {
-          .color =
-              _background_color == WHITE ? _leaves_color : _background_color,
+          .color = color,
           .thickness = 1,
           .p0 = point,
           .p1.x = point.x - vec[j % 2].x,
           .p1.y = point.y - vec[j % 2].y,
       };
-      image_draw_line(image, &line);
+      image_draw_line(peak->image, &line);
     }
   }
 }
@@ -200,8 +202,9 @@ static void _draw_peak(struct Peak *peak, int16_t y_base_left,
 
   // Generate left side (darker) of mountain
   // from the bottom left to the center peak.
-  dark_index = _fill_mountain_peak(dark, dark_index, peak->x_center - peak->width / 2,
-                                   y_base_left, span_x, -span_height_up, &rand);
+  dark_index =
+      _fill_mountain_peak(dark, dark_index, peak->x_center - peak->width / 2,
+                          y_base_left, span_x, -span_height_up, &rand);
 
   // Generate edge of mountain for left and right side.
   // from the center peak to the center bottom.
@@ -254,9 +257,15 @@ static void _draw_peak(struct Peak *peak, int16_t y_base_left,
   struct Point *dark_peak = &dark->points[dark->peak_size - 1];
   struct Point *light_peak = &light->points[light->size - 4];
   _polyfill_mountain(peak->image, light, t1);
-  _draw_mountain_strokes(peak->image, dark, dark->peak_size - 2, dark_peak,
-                         light_peak);
+  _draw_mountain_strokes(peak, edge_points_size * 4, dark_peak, light_peak,
+                         _background_color == WHITE ? _leaves_color
+                                                    : _background_color);
   _polyfill_mountain(peak->image, dark, t0);
+  dark_peak = &dark->points[dark->peak_size - 4];
+  light_peak = &dark->points[dark->peak_size - 2];
+  _draw_mountain_strokes(peak, edge_points_size * 4, light_peak, dark_peak,
+                         _background_color == WHITE ? _background_color
+                                                    : _leaves_color);
 
   _mountain_points_destroy(dark);
   _mountain_points_destroy(light);
