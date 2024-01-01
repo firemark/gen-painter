@@ -1,9 +1,11 @@
 #include "art/landscape.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "art/image/3d.h"
 #include "art/image/image_adv.h"
 #include "art/mountain.h"
 #include "art/random.h"
@@ -18,11 +20,17 @@ int16_t landscape_generate(void) {
   return background_size;
 };
 
-static void _draw_mountain(struct Image *image, int16_t x_center, int16_t width,
-                           int16_t height);
+static void _draw_mountains(struct Image *image);
 static void _draw_terrain(struct Image *image);
+static void _draw_road(struct Image *image);
 
 void landscape_draw(struct Image *image) {
+  _draw_mountains(image);
+  _draw_terrain(image);
+  _draw_road(image);
+}
+
+static void _draw_mountains(struct Image *image) {
   int16_t mountain_height = 400 + random_int(200);
   int16_t mountain_width = 1000 + random_int(400);
   int16_t x_center = IMAGE_WIDTH / 2 + random_int(100) - 200;
@@ -34,11 +42,71 @@ void landscape_draw(struct Image *image) {
   } else {
     draw_mountain(image, x_center, _y, mountain_width, mountain_height);
   }
-  _draw_terrain(image);
 }
 
 static void _draw_terrain(struct Image *image) {
   image_draw_rectangle(image, _branches_color, 96u, _leaves_color,
                        (struct Point){0, _y},
                        (struct Point){IMAGE_WIDTH, IMAGE_HEIGHT});
+}
+
+static void _draw_road(struct Image *image) {
+  float xa = +3000.0f;
+  float xb = +3700.0f;
+  float y = 300.0f;
+  float z0 = 300.0f;
+  float z1 = 1000.0f;
+  enum Color color = _branches_color;
+
+  int i;
+  for (i = 0; i < 4; i++) {
+    struct Point a = to_screen_from_3d(_y, (struct Point3d){xa, y * i, z0});
+    struct Point b = to_screen_from_3d(_y, (struct Point3d){xb, y * i, z0});
+    struct Point c = to_screen_from_3d(_y, (struct Point3d){xa, y * i, z1});
+    struct Point d = to_screen_from_3d(_y, (struct Point3d){xb, y * i, z1});
+
+    {
+      struct Line line = {color, 5, a, b};
+      image_draw_line(image, &line);
+    }
+
+    {
+      struct Line line = {color, 5, a, c};
+      image_draw_line(image, &line);
+    }
+
+    {
+      struct Line line = {color, 5, b, d};
+      image_draw_line(image, &line);
+    }
+
+    {
+      struct Line line = {color, 5, c, d};
+      image_draw_line(image, &line);
+    }
+
+    int j;
+    for(j = 0; j <= 8; j++) {
+      if (i == 3) {
+        break;
+      }
+      float z = z0 + (z1 - z0) * j / 8;
+      struct Point e = to_screen_from_3d(_y, (struct Point3d){xa, y * i, z});
+      struct Point f = to_screen_from_3d(_y, (struct Point3d){xb, y * i, z});
+      struct Point g = to_screen_from_3d(_y, (struct Point3d){xa, y * (i + 1), z});
+      struct Point h = to_screen_from_3d(_y, (struct Point3d){xb, y * (i + 1), z});
+
+      {
+        struct Line line = {color, 5, e, g};
+        image_draw_line(image, &line);
+      }
+
+      {
+        struct Line line = {color, 5, f, h};
+        image_draw_line(image, &line);
+      }
+
+    }
+
+  }
 }

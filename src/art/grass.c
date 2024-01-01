@@ -7,6 +7,7 @@
 #include "art/_share.h"
 
 void grass_draw(struct Image *image, int16_t height) {
+  return;
   int16_t x = 0;
   while (x < IMAGE_WIDTH) {
     int16_t yy = height - 16 + random_int(32);
