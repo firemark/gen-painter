@@ -8,6 +8,7 @@
 #include "art/image/3d.h"
 #include "art/image/image_adv.h"
 #include "art/mountain.h"
+#include "art/road.h"
 #include "art/random.h"
 
 #include "art/_share.h"
@@ -51,62 +52,5 @@ static void _draw_terrain(struct Image *image) {
 }
 
 static void _draw_road(struct Image *image) {
-  float xa = +3000.0f;
-  float xb = +3700.0f;
-  float y = 300.0f;
-  float z0 = 300.0f;
-  float z1 = 1000.0f;
-  enum Color color = _branches_color;
-
-  int i;
-  for (i = 0; i < 4; i++) {
-    struct Point a = to_screen_from_3d(_y, (struct Point3d){xa, y * i, z0});
-    struct Point b = to_screen_from_3d(_y, (struct Point3d){xb, y * i, z0});
-    struct Point c = to_screen_from_3d(_y, (struct Point3d){xa, y * i, z1});
-    struct Point d = to_screen_from_3d(_y, (struct Point3d){xb, y * i, z1});
-
-    {
-      struct Line line = {color, 5, a, b};
-      image_draw_line(image, &line);
-    }
-
-    {
-      struct Line line = {color, 5, a, c};
-      image_draw_line(image, &line);
-    }
-
-    {
-      struct Line line = {color, 5, b, d};
-      image_draw_line(image, &line);
-    }
-
-    {
-      struct Line line = {color, 5, c, d};
-      image_draw_line(image, &line);
-    }
-
-    int j;
-    for(j = 0; j <= 8; j++) {
-      if (i == 3) {
-        break;
-      }
-      float z = z0 + (z1 - z0) * j / 8;
-      struct Point e = to_screen_from_3d(_y, (struct Point3d){xa, y * i, z});
-      struct Point f = to_screen_from_3d(_y, (struct Point3d){xb, y * i, z});
-      struct Point g = to_screen_from_3d(_y, (struct Point3d){xa, y * (i + 1), z});
-      struct Point h = to_screen_from_3d(_y, (struct Point3d){xb, y * (i + 1), z});
-
-      {
-        struct Line line = {color, 5, e, g};
-        image_draw_line(image, &line);
-      }
-
-      {
-        struct Line line = {color, 5, f, h};
-        image_draw_line(image, &line);
-      }
-
-    }
-
-  }
+  draw_road(image, _y, 5000);
 }
