@@ -1,4 +1,4 @@
-#include "art/clouds.h"
+#include "art/background/clouds.h"
 #include "art/random.h"
 
 #include <stdint.h>

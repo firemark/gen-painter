@@ -1,4 +1,4 @@
 #pragma once
-#include "image/image.h"
+#include "art/image/image.h"
 
 void sun_draw(struct Image *image);

@@ -1,5 +1,5 @@
 #pragma once
-#include "image/image.h"
+#include "art/image/image.h"
 
 struct Tree {
   float main_branch_ratio;

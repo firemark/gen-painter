@@ -1,4 +1,4 @@
-#include "art/sun.h"
+#include "art/background/sun.h"
 #include <math.h>
 
 #include "art/_share.h"

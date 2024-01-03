@@ -1,4 +1,4 @@
-#include "art/mountain.h"
+#include "art/background/mountain.h"
 #include "art/_share.h"
 #include "art/image/image_adv.h"
 #include "art/random.h"

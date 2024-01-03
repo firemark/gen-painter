@@ -1,4 +1,4 @@
-#include "art/tree.h"
+#include "art/object/tree.h"
 #include "art/image/image_adv.h"
 #include "art/random.h"
 

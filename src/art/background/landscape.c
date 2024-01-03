@@ -1,4 +1,4 @@
-#include "art/landscape.h"
+#include "art/background/landscape.h"
 
 #include <math.h>
 #include <stdbool.h>
@@ -7,7 +7,7 @@
 
 #include "art/image/3d.h"
 #include "art/image/image_adv.h"
-#include "art/mountain.h"
+#include "art/background/mountain.h"
 #include "art/random.h"
 
 #include "art/_share.h"

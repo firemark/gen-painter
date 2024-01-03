@@ -1,4 +1,4 @@
-#include "art/grass.h"
+#include "art/object/grass.h"
 #include "art/random.h"
 
 #include <stdio.h>

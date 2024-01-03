@@ -1,11 +1,10 @@
 #include "art/world.h"
 #include "art/image/3d.h"
 #include "art/random.h"
-
+#include "art/object/grass.h"
+#include "art/object/road.h"
+#include "art/object/tree.h"
 #include "art/_share.h"
-#include "art/grass.h"
-#include "art/road.h"
-#include "art/tree.h"
 
 static struct TreeConfig {
   struct Tree tree;
