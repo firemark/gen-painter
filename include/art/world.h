@@ -1,5 +1,6 @@
 #pragma once
 #include "art/image/image.h"
+#include "art/object/street_light.h"
 #include <stdbool.h>
 
 #define GRID_CELL_SIZE 10
@@ -10,6 +11,9 @@ enum WorldCell { NOT_FILLED, EMPTY, GRASS, ROAD, TREE };
 
 struct World {
   enum WorldCell grid[GRID_SIZE_H][GRID_SIZE_W];
+  bool has_right_light;
+  bool has_left_light;
+  enum StreetLighStyle street_light_style;
   struct Road {
     int16_t width;
     int16_t x;

@@ -26,6 +26,10 @@ void world_setup(struct World *world) {
   _setup_road(world);
   _setup_trees(world);
   _setup_grass(world);
+
+  world->has_left_light = random_int(10) > 4;
+  world->has_right_light = random_int(10) > 4;
+  world->street_light_style = random_int(2);
 }
 
 static void _setup_init(struct World *world) {
@@ -94,8 +98,8 @@ static void _setup_grass(struct World *world) {
 static void _draw_tree(struct Image *image, int16_t hor, int16_t x, int16_t y);
 static void _draw_grass(struct Image *image, int16_t hor, int16_t x, int16_t y);
 static void _draw_road(struct Image *image, int16_t hor, struct Road *road);
-static void _draw_street_light(struct Image *image, int16_t hor, int16_t x,
-                               int16_t y);
+static void _draw_street_light(struct Image *image, enum StreetLighStyle style,
+                               int16_t hor, int16_t x, int16_t y);
 
 #define INVOKE_CB(cb)                                                          \
   {                                                                            \
@@ -105,18 +109,17 @@ static void _draw_street_light(struct Image *image, int16_t hor, int16_t x,
 
 void world_draw(struct Image *image, struct World *world, int16_t horizont) {
   _draw_road(image, horizont, &world->road);
-  bool has_left_light = random_int(10) > 4;
-  bool has_right_light = random_int(10) > 4;
 
   int16_t x, y;
   for (y = GRID_SIZE_H - 1; y >= 0; y--) {
     if (y % 6 == 0) {
-      if (has_left_light) {
-        _draw_street_light(image, horizont, world->road.x, y);
+      if (world->has_left_light) {
+        int16_t xx = world->road.x;
+        _draw_street_light(image, world->street_light_style, horizont, xx, y);
       }
-      if (has_right_light) {
+      if (world->has_right_light) {
         int16_t xx = world->road.x + world->road.width;
-        _draw_street_light(image, horizont, xx, y);
+        _draw_street_light(image, world->street_light_style, horizont, xx, y);
       }
     }
     for (x = 0; x < GRID_SIZE_W; x++) {
@@ -169,12 +172,12 @@ static void _draw_road(struct Image *image, int16_t hor, struct Road *road) {
   road_draw(image, hor, _x_(road->x), _g_(road->width));
 }
 
-static void _draw_street_light(struct Image *image, int16_t hor, int16_t x,
-                               int16_t y) {
+static void _draw_street_light(struct Image *image, enum StreetLighStyle style,
+                               int16_t hor, int16_t x, int16_t y) {
   float xx = _x_(x);
   float yy = _y_(y);
   struct Point3d position = {xx, 0.0f, yy};
   struct Point point = to_screen_from_3d(hor, position);
   float height = _g_(6000.0f) / position.z;
-  street_light_draw(image, point, height / 4, height);
+  street_light_draw(image, style, point, height / 4, height);
 }
