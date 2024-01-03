@@ -8,7 +8,6 @@
 #include "art/image/3d.h"
 #include "art/image/image_adv.h"
 #include "art/mountain.h"
-#include "art/road.h"
 #include "art/random.h"
 
 #include "art/_share.h"
@@ -23,12 +22,10 @@ int16_t landscape_generate(void) {
 
 static void _draw_mountains(struct Image *image);
 static void _draw_terrain(struct Image *image);
-static void _draw_road(struct Image *image);
 
 void landscape_draw(struct Image *image) {
   _draw_mountains(image);
   _draw_terrain(image);
-  _draw_road(image);
 }
 
 static void _draw_mountains(struct Image *image) {
@@ -49,8 +46,4 @@ static void _draw_terrain(struct Image *image) {
   image_draw_rectangle(image, _branches_color, 96u, _leaves_color,
                        (struct Point){0, _y},
                        (struct Point){IMAGE_WIDTH, IMAGE_HEIGHT});
-}
-
-static void _draw_road(struct Image *image) {
-  draw_road(image, _y, 5000);
 }

@@ -1,13 +1,13 @@
 #include "art/road.h"
 #include "art/_share.h"
 #include "art/image/3d.h"
+#include "art/image/image_adv.h"
 
 #define TO_3D(x, y, z) to_screen_from_3d(horizon, (struct Point3d){x, y, z})
 
-void draw_road(struct Image *image, int16_t horizon, int16_t width) {
-  float x_center = +3500.f;
-  float xa = x_center - width / 2;
-  float xb = x_center + width / 2;
+void road_draw(struct Image *image, int16_t horizon, float xa,
+               float width) {
+  float xb = xa + width;
   float y = 0.0f;
   float z_start = FOV * 4;
   float z_end = INFINITY;
@@ -27,13 +27,19 @@ void draw_road(struct Image *image, int16_t horizon, int16_t width) {
     image_draw_line(image, &line_b);
   }
 
+  {
+    struct Point points[] = {a_start, b_start, a_end, b_end};
+    polyfill(image, points, sizeof(points) / sizeof(struct Point),
+             _branches_color, 48, _leaves_color);
+  }
+
   float z;
-  for(z=z_start; z < z_lane_end; z += 100.0f) {
+  float x_center = xa + width / 2;
+  for (z = z_start; z < z_lane_end; z += 100.0f) {
     struct Point a0 = TO_3D(x_center, y, z);
     struct Point a1 = TO_3D(x_center, y, z + 50.0f);
 
     struct Line line_a = {color, 1000 / z, a0, a1};
     image_draw_line(image, &line_a);
   }
-
 }

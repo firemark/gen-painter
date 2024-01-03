@@ -60,7 +60,7 @@ void tree_draw_front(struct Image *image) {
       struct Circle circle = _leaves[i];
       circle.p.x += dx;
       circle.p.y += dy;
-      image_draw_circle(image, &circle);
+      image_draw_circle_threshold(image, &circle, 128, TRANSPARENT);
     }
   }
 }
