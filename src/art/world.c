@@ -1,10 +1,11 @@
 #include "art/world.h"
+#include "art/_share.h"
 #include "art/image/3d.h"
-#include "art/random.h"
 #include "art/object/grass.h"
 #include "art/object/road.h"
+#include "art/object/street_light.h"
 #include "art/object/tree.h"
-#include "art/_share.h"
+#include "art/random.h"
 
 static struct TreeConfig {
   struct Tree tree;
@@ -92,10 +93,9 @@ static void _setup_grass(struct World *world) {
 
 static void _draw_tree(struct Image *image, int16_t hor, int16_t x, int16_t y);
 static void _draw_grass(struct Image *image, int16_t hor, int16_t x, int16_t y);
-
-static inline float _g_(float x) { return x * GRID_CELL_SIZE; }
-static inline float _x_(float x) { return _g_(x - GRID_SIZE_W / 2); }
-static inline float _y_(float y) { return FOV * 5 + _g_(y) * 8; }
+static void _draw_road(struct Image *image, int16_t hor, struct Road *road);
+static void _draw_street_light(struct Image *image, int16_t hor, int16_t x,
+                               int16_t y);
 
 #define INVOKE_CB(cb)                                                          \
   {                                                                            \
@@ -104,10 +104,21 @@ static inline float _y_(float y) { return FOV * 5 + _g_(y) * 8; }
   }
 
 void world_draw(struct Image *image, struct World *world, int16_t horizont) {
-  road_draw(image, horizont, _x_(world->road.x), _g_(world->road.width));
+  _draw_road(image, horizont, &world->road);
+  bool has_left_light = random_int(10) > 4;
+  bool has_right_light = random_int(10) > 4;
 
   int16_t x, y;
   for (y = GRID_SIZE_H - 1; y >= 0; y--) {
+    if (y % 6 == 0) {
+      if (has_left_light) {
+        _draw_street_light(image, horizont, world->road.x, y);
+      }
+      if (has_right_light) {
+        int16_t xx = world->road.x + world->road.width;
+        _draw_street_light(image, horizont, xx, y);
+      }
+    }
     for (x = 0; x < GRID_SIZE_W; x++) {
       enum WorldCell cell = world->grid[y][x];
       switch (cell) {
@@ -123,6 +134,10 @@ void world_draw(struct Image *image, struct World *world, int16_t horizont) {
     }
   }
 }
+
+static inline float _g_(float x) { return x * GRID_CELL_SIZE; }
+static inline float _x_(float x) { return _g_(x - GRID_SIZE_W / 2); }
+static inline float _y_(float y) { return FOV * 5 + _g_(y) * 8; }
 
 static void _draw_tree(struct Image *image, int16_t hor, int16_t x, int16_t y) {
   struct Point3d position = {_x_(x), 0.0f, _y_(y)};
@@ -144,6 +159,22 @@ static void _draw_grass(struct Image *image, int16_t hor, int16_t x,
   struct Point point_a = to_screen_from_3d(hor, position_a);
   struct Point point_b = to_screen_from_3d(hor, position_b);
   float size_factor = 200 + random_int(100);
-  float size = GRID_CELL_SIZE * size_factor / position_a.z;
+  float size = _g_(size_factor) / position_a.z;
   grass_draw(image, point_a.x, point_b.x, point_a.y, size);
+}
+
+static void _draw_road(struct Image *image, int16_t hor, struct Road *road) {
+  float x = _x_(road->x);
+  float w = _g_(road->width);
+  road_draw(image, hor, _x_(road->x), _g_(road->width));
+}
+
+static void _draw_street_light(struct Image *image, int16_t hor, int16_t x,
+                               int16_t y) {
+  float xx = _x_(x);
+  float yy = _y_(y);
+  struct Point3d position = {xx, 0.0f, yy};
+  struct Point point = to_screen_from_3d(hor, position);
+  float height = _g_(6000.0f) / position.z;
+  street_light_draw(image, point, height / 4, height);
 }
