@@ -134,7 +134,7 @@ static void _world_setup() {
   }
 
   _world.road.width = 4 + random_int(4);
-  _world.road.x = 3 + random_int(GRID_SIZE_W - 1 - _world.road.width - 6);
+  _world.road.x = GRID_SIZE_W / 4 + random_int(GRID_SIZE_W / 2 - 1 - _world.road.width);
   for (y = 0; y < GRID_SIZE_H; y++) {
     for (x = 0; x <= _world.road.width; x++) {
       _world.grid[y][_world.road.x + x] = ROAD;
@@ -144,7 +144,7 @@ static void _world_setup() {
   uint8_t tree_count = _tree_config.count;
   while (tree_count > 0) {
     // TODO poisson point process.
-    x = random_int(GRID_SIZE_W);
+    x = GRID_SIZE_W / 4 + random_int(GRID_SIZE_W / 2);
     y = 3 + random_int(GRID_SIZE_H / 2);
     enum Cell *cell = &_world.grid[y][x];
     if (*cell != NOT_FILLED) {
@@ -162,7 +162,7 @@ static void _world_setup() {
         continue;
       }
 
-      *cell = GRASS; // random_int(32) > 24 ? EMPTY : GRASS;
+      *cell = random_int(32) > 30 ? EMPTY : GRASS;
     }
   }
 }
@@ -178,8 +178,10 @@ void art_make(struct ArtData data) {
   _horizont_height = landscape_generate();
 }
 
-static void _draw_tree(struct Image *image, struct Point point, float height_ratio) {
-  int16_t tree_height = (_tree_config.tree_height + random_int(50)) * height_ratio;
+static void _draw_tree(struct Image *image, struct Point point,
+                       float height_ratio) {
+  int16_t tree_height =
+      (_tree_config.tree_height + random_int(50)) * height_ratio;
   tree_generate(point, tree_height, &_tree_config.tree);
   tree_draw_back(image);
   tree_draw_branches(image);
@@ -207,20 +209,23 @@ void art_draw(struct Image *image) {
   int16_t x, y;
   for (y = GRID_SIZE_H - 1; y >= 0; y--) {
     for (x = 0; x < GRID_SIZE_W; x++) {
-      struct Point3d position = {_x_(x), 0.0f, _y_(y)};
-      struct Point point = to_screen_from_3d(horizont, position);
-      switch (_world.grid[y][x]) {
+      enum Cell cell = _world.grid[y][x];
+      switch (cell) {
       case GRASS: {
-        float size = GRID_CELL_SIZE * 50 * 8 / position.z;
-        struct Circle c = {.color = _leaves_color, .p = point, .d = size};
-        image_draw_circle(image, &c);
-        // grass_draw();
+        struct Point3d position_a = {_x_(x - 1), 0.0f, _y_(y)};
+        struct Point3d position_b = {_x_(x), 0.0f, _y_(y)};
+        struct Point point_a = to_screen_from_3d(horizont, position_a);
+        struct Point point_b = to_screen_from_3d(horizont, position_b);
+        float size_factor = 200 + random_int(100);
+        float size = GRID_CELL_SIZE * size_factor / position_a.z;
+        grass_draw(image, point_a.x, point_b.x, point_a.y, size);
       } break;
       case TREE: {
+        struct Point3d position = {_x_(x), 0.0f, _y_(y)};
+        struct Point point = to_screen_from_3d(horizont, position);
         float height_ratio = GRID_CELL_SIZE * 50 / position.z;
         _draw_tree(image, point, height_ratio);
-      }
-      break;
+      } break;
       case NOT_FILLED:
       case EMPTY:
       case ROAD:

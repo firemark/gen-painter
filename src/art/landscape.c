@@ -43,7 +43,7 @@ static void _draw_mountains(struct Image *image) {
 }
 
 static void _draw_terrain(struct Image *image) {
-  image_draw_rectangle(image, _branches_color, 96u, _leaves_color,
+  image_draw_rectangle(image, _branches_color, 128, _leaves_color,
                        (struct Point){0, _y},
                        (struct Point){IMAGE_WIDTH, IMAGE_HEIGHT});
 }
