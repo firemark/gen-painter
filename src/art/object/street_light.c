@@ -2,6 +2,8 @@
 #include "art/_share.h"
 #include "art/image/image_adv.h"
 
+#include <math.h>
+
 static void _draw_classic(struct Image *image, struct Point head,
                           struct Line line_stick, int16_t head_height);
 static void _draw_sphere(struct Image *image, struct Point head,
@@ -82,37 +84,50 @@ void street_light_draw(struct Image *image, enum StreetLighStyle style,
   }
 }
 
+#define ROUND_POINT 6
+
 static void _draw_classic(struct Image *image, struct Point head,
                           struct Line line_stick, int16_t head_height) {
   int16_t ha = head_height / 2;
   int16_t hb = head_height / 3;
   int16_t hc = head_height - hb;
   int16_t hd = head_height / 5;
+  uint8_t i;
 
   struct Line line_head = {
       .thickness = line_stick.thickness / 8,
       .color = line_stick.color,
   };
 
+  struct Point top_points[ROUND_POINT + 1];
+  struct Point bottom_points[ROUND_POINT + 1];
+
+  for (i = 0; i <= ROUND_POINT; i++) {
+    int16_t h = hd * sin(M_PI * (float)i / (float)ROUND_POINT) * 0.5;
+    int16_t top_shift = 2 * ha * i / ROUND_POINT - ha;
+    int16_t bottom_shift = 2 * hb * i / ROUND_POINT - hb;
+    top_points[i] = (struct Point){head.x + top_shift, head.y + h - hc};
+    bottom_points[i] = (struct Point){head.x + bottom_shift, head.y + h};
+  }
+
   { // Glass
-    struct Point points[] = {
-        {head.x - hb, head.y},
-        {head.x + hb, head.y},
-        {head.x + ha, head.y - hc},
-        {head.x - ha, head.y - hc},
-    };
-    polyfill(image, points, sizeof(points) / sizeof(struct Point), WHITE, 0xFF,
-             BLACK);
+    struct Point points[2 * (ROUND_POINT + 1)];
+    for (i = 0; i <= ROUND_POINT; i++) {
+      points[i] = top_points[i];
+      points[ROUND_POINT + 1 + i] = bottom_points[ROUND_POINT - i];
+    }
+    uint8_t size = sizeof(points) / sizeof(struct Point);
+    polyfill(image, points, size, WHITE, 0xFF, BLACK);
   }
 
   { // Top
-    struct Point points[] = {
-        {head.x - ha, head.y - hc},
-        {head.x, head.y - head_height},
-        {head.x + ha, head.y - hc},
-    };
-    polyfill(image, points, sizeof(points) / sizeof(struct Point),
-             line_head.color, 0xFF, BLACK);
+    struct Point points[ROUND_POINT + 1 + 1];
+    for (i = 0; i <= ROUND_POINT; i++) {
+      points[i] = top_points[i];
+    }
+    points[ROUND_POINT + 1] = (struct Point){head.x, head.y - head_height};
+    uint8_t size = sizeof(points) / sizeof(struct Point);
+    polyfill(image, points, size, line_head.color, 0xFF, BLACK);
   }
 
   { // Circles!
@@ -129,15 +144,17 @@ static void _draw_classic(struct Image *image, struct Point head,
     image_draw_circle(image, &circle);
   }
 
-  { // Bottom head
-    line_stick.p0 = (struct Point){head.x - hb, head.y};
-    line_stick.p1 = (struct Point){head.x + hb, head.y};
+  // Bottom head
+  for (i = 0; i < ROUND_POINT; i++) {
+    line_stick.p0 = bottom_points[i];
+    line_stick.p1 = bottom_points[i + 1];
     image_draw_line(image, &line_stick);
   }
 
-  { // Top head
-    line_stick.p0 = (struct Point){head.x - ha, head.y - hc};
-    line_stick.p1 = (struct Point){head.x + ha, head.y - hc};
+  // Top head
+  for (i = 0; i < ROUND_POINT; i++) {
+    line_stick.p0 = top_points[i];
+    line_stick.p1 = top_points[i + 1];
     image_draw_line(image, &line_stick);
   }
 
@@ -146,10 +163,10 @@ static void _draw_classic(struct Image *image, struct Point head,
     return;
   }
 
-  int i;
   for (i = 0; i <= 3; i++) {
-    line_head.p0 = (struct Point){head.x - hb + hb * 2 * i / 3, head.y};
-    line_head.p1 = (struct Point){head.x - ha + ha * 2 * i / 3, head.y - hc};
+    uint8_t index = ROUND_POINT * i / 3;
+    line_head.p0 = top_points[index];
+    line_head.p1 = bottom_points[index];
     image_draw_line(image, &line_head);
   }
 }
@@ -159,9 +176,8 @@ static void _draw_sphere(struct Image *image, struct Point head,
   int16_t ha = head_height / 2;
   int16_t hb = head_height / 3;
   { // Glass
-    struct Circle circle = {.color = WHITE,
-                            .d = ha,
-                            .p = (struct Point){head.x, head.y - ha}};
+    struct Circle circle = {
+        .color = WHITE, .d = ha, .p = (struct Point){head.x, head.y - ha}};
     image_draw_circle(image, &circle);
   }
 
