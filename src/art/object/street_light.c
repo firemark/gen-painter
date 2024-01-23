@@ -84,7 +84,22 @@ void street_light_draw(struct Image *image, enum StreetLighStyle style,
   }
 }
 
-#define ROUND_POINT 6
+#define ROUND_POINT 12
+float round_point_cache[ROUND_POINT + 1] = {
+    0.0,
+    0.5527707983925666,
+    0.7453559924999299,
+    0.8660254037844386,
+    0.9428090415820634,
+    0.9860132971832694,
+    1.0,
+    0.9860132971832694,
+    0.9428090415820634,
+    0.8660254037844386,
+    0.7453559924999299,
+    0.5527707983925666,
+    0.0,
+};
 
 static void _draw_classic(struct Image *image, struct Point head,
                           struct Line line_stick, int16_t head_height) {
@@ -103,7 +118,7 @@ static void _draw_classic(struct Image *image, struct Point head,
   struct Point bottom_points[ROUND_POINT + 1];
 
   for (i = 0; i <= ROUND_POINT; i++) {
-    int16_t h = hd * sin(M_PI * (float)i / (float)ROUND_POINT) * 0.5;
+    int16_t h = hd * 0.5 * round_point_cache[i];
     int16_t top_shift = 2 * ha * i / ROUND_POINT - ha;
     int16_t bottom_shift = 2 * hb * i / ROUND_POINT - hb;
     top_points[i] = (struct Point){head.x + top_shift, head.y + h - hc};
