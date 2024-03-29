@@ -1,5 +1,4 @@
 #pragma once
-#include "image/image.h"
 #include <stdint.h>
 
 /// @warning This functions should be implemented in main!
@@ -22,3 +21,4 @@ static inline int16_t random_int_b(int16_t x) {
   int16_t i = random_int(2 * x);
   return i - x;
 }
+

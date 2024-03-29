@@ -1,7 +1,9 @@
 #include "art/background/mountain.h"
-#include "art/_share.h"
 #include "art/image/image_adv.h"
 #include "art/random.h"
+#include "art/random_point.h"
+
+#include "art/_share.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -109,38 +111,58 @@ static void _polyfill_mountain(struct Image *image,
 }
 
 static void _draw_mountain_strokes(struct Peak *peak, int16_t count,
-                                   struct Point *dark_peak,
-                                   struct Point *light_peak, enum Color color) {
-  uint8_t i;
-  struct Point diff = {(dark_peak->x - light_peak->x),
-                       (dark_peak->y - light_peak->y)};
+                                   struct Point *a, struct Point *b,
+                                   struct Point *c, enum Color color) {
+  struct Point diff = {b->x - a->x, b->y - a->y};
   struct Point vec[2] = {
-      {diff.x / 2, diff.y / 2},
-      {diff.x / 3, diff.y / 3},
+      {diff.x / 5, diff.y / 5},
+      {diff.x / 8, diff.y / 8},
   };
+  int16_t right_margin = vec[0].x;
+  int16_t left_margin = right_margin / 4;
+  int16_t bottom_margin = vec[0].y;
+  int16_t top_margin = bottom_margin / 4;
 
+  struct Point aa = {a->x, a->y + top_margin};
+  struct Point bb = {b->x - right_margin, b->y - bottom_margin};
+  struct Point cc = {c->x + left_margin, c->y - bottom_margin};
+
+  uint8_t i;
   for (i = 0; i < count; i++) {
-    int j;
-    int s = -diff.y / 32;
-    int16_t rh = random_int(peak->height * 6 / 7);
-    int16_t rw = random_int(peak->width * rh / peak->height);
-    if (diff.x > 0) {
-      rw = -rw;
-    }
-    struct Point r = {dark_peak->x + rw / 2, dark_peak->y + rh};
-    for (j = 0; j < s; j++) {
-      struct Point point = {random_int(10) + r.x - diff.y * j / s,
-                            random_int(10) + r.y - diff.x * j / s};
-      struct Line line = {
-          .color = color,
-          .thickness = 1,
-          .p0 = point,
-          .p1.x = point.x - vec[j % 2].x,
-          .p1.y = point.y - vec[j % 2].y,
-      };
-      image_draw_line(peak->image, &line);
-    }
+    struct Point point = random_triangle(aa, bb, cc);
+
+    struct Line line = {
+        .color = color,
+        .thickness = 1,
+        .p0 = point,
+        .p1.x = point.x + vec[i % 2].x,
+        .p1.y = point.y + vec[i % 2].y,
+    };
+    image_draw_line(peak->image, &line);
   }
+
+  // for (i = 0; i < count; i++) {
+  //   int j;
+  //   int s = -diff.y / 32;
+  //   int16_t rh = random_int(peak->height * 6 / 7);
+  //   int16_t rw = random_int(peak->width * rh / peak->height);
+  //   if (diff.x > 0) {
+  //     rw = -rw;
+  //   }
+  //   struct Point r = {dark_peak->x + rw / 2, dark_peak->y + rh};
+  //   for (j = 0; j < s; j++) {
+  //     struct Point point = {random_int(10) + r.x - diff.y * j / s,
+  //                           random_int(10) + r.y - diff.x * j / s};
+  //     struct Line line = {
+  //         .color = color,
+  //         .thickness = 1,
+  //         .p0 = point,
+  //         .p1.x = point.x - vec[j % 2].x,
+  //         .p1.y = point.y - vec[j % 2].y,
+  //     };
+  //     image_draw_line(peak->image, &line);
+  //   }
+  // }
 }
 
 static uint8_t _fill_mountain_peak(struct MountainPoints *points, uint8_t index,
@@ -206,6 +228,8 @@ static void _draw_peak(struct Peak *peak, int16_t y_base_left,
       _fill_mountain_peak(dark, dark_index, peak->x_center - peak->width / 2,
                           y_base_left, span_x, -span_height_up, &rand);
 
+  struct Point *dark_peak = &dark->points[dark_index - 1];
+
   // Generate edge of mountain for left and right side.
   // from the center peak to the center bottom.
   struct Point edge = dark->points[dark_index - 1];
@@ -228,6 +252,8 @@ static void _draw_peak(struct Peak *peak, int16_t y_base_left,
   dark->points[dark_index - 1].y = y_base_mid;
   light->points[light_index - 1].y = y_base_mid;
 
+  struct Point *base_mid = &dark->points[dark_index - 1];
+
   // Generate base of the left side
   // from the bottom center to the bottom left.
   dark_index = _fill_mountain_base(dark, dark_index, edge.x, y_base_mid,
@@ -237,6 +263,8 @@ static void _draw_peak(struct Peak *peak, int16_t y_base_left,
   // from the bottom center to the bottom right.
   light_index = _fill_mountain_base(light, light_index, edge.x, y_base_mid,
                                     y_base_right, +span_x * 2, &rand);
+
+  struct Point *base_right = &light->points[light_index];
 
   // Generate right side (lighter) of mountain
   // from the bottom right to the center peak.
@@ -254,16 +282,27 @@ static void _draw_peak(struct Peak *peak, int16_t y_base_left,
     t1 = 128u;
   }
 
-  struct Point *dark_peak = &dark->points[dark->peak_size - 1];
-  struct Point *light_peak = &light->points[light->size - 4];
+  // struct Point *dark_peak = &dark->points[dark->peak_size - 1];
+  // struct Point *light_peak = &light->points[edge_points_size +
+  // light->base_size - 1];
+
+  struct Point *a;
+  struct Point *b;
+  struct Point *c;
+
+  a = dark_peak;
+  b = base_right;
+  c = base_mid;
   _polyfill_mountain(peak->image, light, t1);
-  _draw_mountain_strokes(peak, edge_points_size * 4, dark_peak, light_peak,
+  _draw_mountain_strokes(peak, edge_points_size * 4, a, b, c,
                          _background_color == WHITE ? _leaves_color
                                                     : _background_color);
   _polyfill_mountain(peak->image, dark, t0);
-  dark_peak = &dark->points[dark->peak_size - 4];
-  light_peak = &dark->points[dark->peak_size - 2];
-  _draw_mountain_strokes(peak, edge_points_size * 4, light_peak, dark_peak,
+  // dark_peak = &dark->points[dark->peak_size - 4];
+  // light_peak = &dark->points[dark->peak_size - 2];
+
+  b = &dark->points[0];
+  _draw_mountain_strokes(peak, edge_points_size * 4, a, b, c,
                          _background_color == WHITE ? _background_color
                                                     : _leaves_color);
 
