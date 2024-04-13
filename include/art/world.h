@@ -22,5 +22,6 @@ struct World {
 
 bool world_init(void);
 void world_setup(struct World *world);
-void world_draw(struct Image *image, struct World *world, int16_t horizont);
+void world_draw_back(struct Image *image, struct World *world, int16_t horizont);
+void world_draw_front(struct Image *image, struct World *world, int16_t horizont);
 void world_reset(void);

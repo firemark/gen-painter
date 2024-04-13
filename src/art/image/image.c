@@ -1,4 +1,5 @@
 #include "art/image/image.h"
+#include "art/random.h"
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -29,6 +30,8 @@
   }
 
 static inline uint8_t _threshold(uint8_t threshold, uint16_t z);
+static inline uint8_t _get_threshold_pixel(uint16_t x, uint16_t y,
+                                           uint8_t threshold);
 
 struct Image *image_create() {
   struct Image *image = (struct Image *)malloc(sizeof(struct Image));
@@ -287,12 +290,8 @@ void image_draw_hline(struct Image *image, int16_t y, int16_t x0, int16_t x1,
 
   CLIP(x0, x1, IMAGE_WIDTH - 1);
   for (x = x0; x <= x1; x++) {
-    uint16_t z = x * x + yy;
-    if (_threshold(threshold, z)) {
-      _image_set_pixel(image, color, x, y);
-    } else {
-      _image_set_pixel(image, bg_color, x, y);
-    }
+    uint16_t z = _get_threshold_pixel(x, y, threshold);
+    _image_set_pixel(image, z ? color : bg_color, x, y);
   }
 }
 
@@ -476,8 +475,58 @@ static inline uint8_t _threshold(uint8_t threshold, uint16_t z) {
   }
 }
 
+static uint32_t *_dithering_array = NULL;
+
+char dithering_array_init(void) {
+  _dithering_array = malloc(128 * 128 * sizeof(uint32_t));
+  return 1;
+}
+
+static uint32_t _dithering_array_random_chunk(uint8_t z_start, uint8_t z_end) {
+  static const int16_t a = 1 << 14;
+  static const int16_t b = a / 16;
+  uint32_t c = 0;
+
+  for (uint8_t i = 0; i < 8; i++) {
+    uint8_t z = b * i > random_int(a) ? z_end : z_start;
+    if (z) {
+      c |= (1 << i);
+    }
+  }
+  return c;
+}
+
+void dithering_array_random(void) {
+  for (uint8_t y = 0; y < 128; y++) {
+    uint16_t yy = y * y;
+    for (uint8_t x = 0; x < 128; x++) {
+      uint8_t zz = x * x + yy;
+      uint8_t z0 = 0;
+      uint8_t z1 = zz % 2 != 0;
+      uint8_t z2 = zz % 4 != 0;
+      uint8_t z3 = zz % 8 != 0;
+      uint8_t z4 = 1;
+
+      uint32_t c = 0;
+      c |= _dithering_array_random_chunk(z0, z1);
+      c |= _dithering_array_random_chunk(z1, z2) << 8;
+      c |= _dithering_array_random_chunk(z2, z3) << 16;
+      c |= _dithering_array_random_chunk(z3, z4) << 24;
+      _dithering_array[y * 128 + x] = c;
+    }
+  }
+}
+
+static inline uint8_t _get_threshold_pixel(uint16_t x, uint16_t y,
+                                           uint8_t threshold) {
+  uint16_t index = (y % 128) * 128 + (x % 128);
+  uint32_t c = _dithering_array[index];
+  return (c >> (threshold / 8)) & 1;
+}
+
 void image_draw_rectangle(struct Image *image, enum Color color,
-                          uint8_t threshold, enum Color bg_color, struct Point p0, struct Point p1) {
+                          uint8_t threshold, enum Color bg_color,
+                          struct Point p0, struct Point p1) {
   int16_t x0 = p0.x;
   int16_t x1 = p1.x;
   int16_t y0 = p0.y;
@@ -500,12 +549,8 @@ void image_draw_rectangle(struct Image *image, enum Color color,
 
   for (uint16_t y = y0; y <= y1; y++) {
     for (uint16_t x = x0; x <= x1; x++) {
-      uint16_t z = x * x + y * y;
-      if (_threshold(threshold, z)) {
-        _image_set_pixel(image, color, x, y);
-      } else {
-        _image_set_pixel(image, bg_color, x, y);
-      }
+      uint16_t z = _get_threshold_pixel(x, y, threshold);
+      _image_set_pixel(image, z ? color : bg_color, x, y);
     }
   }
 }
@@ -533,10 +578,8 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
       int16_t yy0 = y0 + y;
       int16_t yy1 = y0 - y;
       for (int16_t xx = x_min; xx <= x_max; xx++) {
-        uint8_t z0 =
-            _threshold(threshold, xx + yy0) | _threshold(threshold, xx - yy0);
-        uint8_t z1 =
-            _threshold(threshold, xx + yy1) | _threshold(threshold, xx - yy1);
+        uint16_t z0 = _get_threshold_pixel(xx, yy0, threshold);
+        uint16_t z1 = _get_threshold_pixel(xx, yy1, threshold);
 
         _image_set_pixel(image, z0 ? circle->color : background, xx, yy0);
         _image_set_pixel(image, z1 ? circle->color : background, xx, yy1);
@@ -547,10 +590,8 @@ void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
       int16_t yy0 = y0 + x;
       int16_t yy1 = y0 - x;
       for (int16_t xx = y_min; xx <= y_max; xx++) {
-        uint8_t z0 =
-            _threshold(threshold, xx + yy0) | _threshold(threshold, xx - yy0);
-        uint8_t z1 =
-            _threshold(threshold, xx + yy1) | _threshold(threshold, xx - yy1);
+        uint16_t z0 = _get_threshold_pixel(xx, yy0, threshold);
+        uint16_t z1 = _get_threshold_pixel(xx, yy1, threshold);
 
         _image_set_pixel(image, z0 ? circle->color : background, xx, yy0);
         _image_set_pixel(image, z1 ? circle->color : background, xx, yy1);

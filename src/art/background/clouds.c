@@ -20,7 +20,7 @@ static enum Color _bg_color;
 static void _draw_background_cloud_fancy(struct Image *image,
                                          struct Cloud *cloud, uint8_t treshold,
                                          int16_t x_shift, int16_t y_shift,
-                                         uint8_t size);
+                                         uint8_t size, enum Color bg_color);
 
 static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
                                    uint8_t step);
@@ -64,7 +64,7 @@ static void _draw_background_cloud_bar(struct Image *image, int16_t x_start,
 static void _draw_background_cloud_fancy(struct Image *image,
                                          struct Cloud *cloud, uint8_t treshold,
                                          int16_t x_shift, int16_t y_shift,
-                                         uint8_t size) {
+                                         uint8_t size, enum Color bg_color) {
   const uint8_t mult = 24;
   uint8_t span = (cloud->width - cloud->height) / 4;
   uint8_t _j = 0;
@@ -86,7 +86,7 @@ static void _draw_background_cloud_fancy(struct Image *image,
           .d = size + random_next(&_j) / 2,
           .color = WHITE,
       };
-      image_draw_circle_threshold(image, &circle, treshold, _bg_color);
+      image_draw_circle_threshold(image, &circle, treshold, bg_color);
     }
 
     y += random_next(&_j) + 1;
@@ -102,7 +102,7 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
       int16_t y = cloud->point.y - i * mult;
       int16_t x_start = cloud->point.x + span * i * mult;
       int16_t x_end = cloud->point.x + (cloud->width - span * i) * mult;
-      _draw_background_cloud_bar(image, x_start, x_end, y, 16, 12, 128 - 16);
+      _draw_background_cloud_bar(image, x_start, x_end, y, 16, 12, 128 - random_int(16));
     }
   } else {
     if (step > 2) {
@@ -110,10 +110,11 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
     }
   }
 
-  _draw_background_cloud_fancy(image, cloud, 128 - 32, -4, -4, 8);
-  _draw_background_cloud_fancy(image, cloud, 128, 2, 2, 6);
-  _draw_background_cloud_fancy(image, cloud, 128 - 8, 0, 0, 2);
-  _draw_background_cloud_fancy(image, cloud, 128 - 8, -2, -2, 2);
+  _draw_background_cloud_fancy(image, cloud, 32, 0, 0, 12, TRANSPARENT);
+  _draw_background_cloud_fancy(image, cloud, 128 - 16 - random_int(16), 0, 0, 8, _bg_color);
+  _draw_background_cloud_fancy(image, cloud, 128, 2, 2, 6, _bg_color);
+  _draw_background_cloud_fancy(image, cloud, 128 - 4 - random_int(4), 0, 0, 2, _bg_color);
+  _draw_background_cloud_fancy(image, cloud, 128 - 4 - random_int(4), -2, -2, 2, _bg_color);
 
   int8_t r0x = 16 - random_next(&_i);
   int8_t r0y = 16 - random_next(&_i);

@@ -1,17 +1,17 @@
 #include "art/art.h"
-#include "art/random.h"
-#include "art/forecast.h"
-#include "art/background/sun.h"
-#include "art/background/landscape.h"
-#include "art/background/clouds.h"
-#include "art/world.h"
 #include "art/_share.h"
+#include "art/background/clouds.h"
+#include "art/background/landscape.h"
+#include "art/background/landscape_fog.h"
+#include "art/background/sun.h"
+#include "art/forecast.h"
+#include "art/random.h"
+#include "art/world.h"
 
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 
 struct ArtData _data;
 enum Color _background_color;
@@ -86,12 +86,15 @@ static void _random_colors(void) {
 static void _reset(void) {
   world_reset();
   random_shuffle_array();
+  dithering_array_random();
 }
 
 int16_t _horizont_height;
 static struct World _world;
 
-uint8_t art_init(void) { return world_init() && clouds_init(); }
+uint8_t art_init(void) {
+  return world_init() && clouds_init() && dithering_array_init();
+}
 
 void art_make(struct ArtData data) {
   _data = data;
@@ -103,13 +106,16 @@ void art_make(struct ArtData data) {
 
 void art_draw(struct Image *image) {
   image_clear(image, _background_color);
+  int16_t horizont = IMAGE_HEIGHT - _horizont_height;
 
   sun_draw(image);
   _rain(image);
   _snow(image);
   clouds_draw(image);
   landscape_draw(image);
-  world_draw(image, &_world, IMAGE_HEIGHT - _horizont_height);
+  world_draw_back(image, &_world, horizont);
+  draw_landscape_fog(image, horizont, IMAGE_WIDTH);
+  world_draw_front(image, &_world, horizont);
   _rain(image);
   _snow(image);
 

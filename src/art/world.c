@@ -107,9 +107,11 @@ static void _draw_street_light(struct Image *image, enum StreetLighStyle style,
     break;                                                                     \
   }
 
-void world_draw(struct Image *image, struct World *world, int16_t horizont) {
+void world_draw_back(struct Image *image, struct World *world, int16_t horizont) {
   _draw_road(image, horizont, &world->road);
+}
 
+void world_draw_front(struct Image *image, struct World *world, int16_t horizont) {
   int16_t x, y;
   for (y = GRID_SIZE_H - 1; y >= 0; y--) {
     if (y % 6 == 0) {
