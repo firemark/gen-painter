@@ -12,11 +12,6 @@ static const int16_t HEIGHT_SKY = 4;
 
 void draw_landscape_fog(struct Image *image, int16_t y, int16_t width) {
   for (uint8_t i = 0; i < 16; i++) {
-    struct Point p0 = {0, 128 + HEIGHT_SKY};
-    struct Point p1 = {width, 128 + i * HEIGHT_SKY};
-    image_draw_rectangle(image, _leaves_color, (15 - i) * 8, TRANSPARENT, p0, p1);
-  }
-  for (uint8_t i = 0; i < 16; i++) {
     int16_t height = HEIGHT_UP * i;
     struct Point p0 = {0, y - height - HEIGHT_UP};
     struct Point p1 = {width, y - height};
