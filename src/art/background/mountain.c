@@ -10,47 +10,49 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define MOUNTAIN_BASE_POINTS 12
+#define WIDTH 100
 
-struct MountainPointTree {
+struct MountainPointPath {
   struct Point3d point;
-  struct MountainPointTree *right;
-  struct MountainPointTree *down;
+  struct MountainPointPath *down;
 };
 
-static void _create_mountain_path(struct MountainPointTree *ptr) {
+struct MountainPointTree {
+  struct MountainPointTree *right;
+  struct MountainPointPath path;
+};
+
+static void _create_mountain_path(struct MountainPointPath *ptr) {
   struct Point3d point = ptr->point;
   while (point.y > 0.0f) {
-    point.y -= 16.0f + random_int_b(4);
+    point.y -= WIDTH / 8 + random_int_b(WIDTH / 16);
     if (point.y < 0.0f) {
       point.y = 0.0f;
     }
-    point.z += 20.0f + random_int(8);
-    ptr->down = malloc(sizeof(struct MountainPointTree));
+    point.z += WIDTH / 8 + random_int(WIDTH / 16);
+    ptr->down = malloc(sizeof(struct MountainPointPath));
     ptr = ptr->down;
     ptr->point = point;
-    ptr->point.x += random_int_b(32);
-    ptr->right = NULL;
+    ptr->point.x += random_int_b(WIDTH / 4);
   }
   ptr->down = NULL;
 }
 
-static void _smooth_path(struct MountainPointTree *up)
-{
-  while(up) {
-    struct MountainPointTree *mid = up->down;
+static void _smooth_path(struct MountainPointPath *up) {
+  while (up) {
+    struct MountainPointPath *mid = up->down;
     if (!mid) {
       return;
     }
-    struct MountainPointTree *down = mid->down;
+    struct MountainPointPath *down = mid->down;
     if (!down) {
       return;
     }
-    #define CALC(v) (0.25 * up->point.v + 0.5 * mid->point.v + 0.25 * down->point.v)
-    mid->point = (struct Point3d) {
-      .x = CALC(x),
-      .y = CALC(y),
-      .z = CALC(z),
+#define CALC(v) (0.25 * up->point.v + 0.5 * mid->point.v + 0.25 * down->point.v)
+    mid->point = (struct Point3d){
+        .x = CALC(x),
+        .y = CALC(y),
+        .z = CALC(z),
     };
     up = mid;
   }
@@ -60,66 +62,89 @@ static struct MountainPointTree *_create_mountain(int16_t width,
                                                   int16_t height) {
   struct MountainPointTree *tree = malloc(sizeof(struct MountainPointTree));
   struct MountainPointTree *ptr = tree;
-  float shift = width / MOUNTAIN_BASE_POINTS;
-  for (uint8_t i = 0; i < MOUNTAIN_BASE_POINTS; i++) {
-    ptr->point = (struct Point3d){
-        .x = (float)i * shift + random_int_b(shift / 4) - width / 2,
-        .y = height * sin((float)(i + 1) / MOUNTAIN_BASE_POINTS * M_PI) +
-             random_int_b(shift / 2),
-        .z = random_int(shift),
+  struct Point bezier_points[4] = {
+      // {z, y},
+      {random_int(WIDTH * 2), 0},
+      {random_int(WIDTH * 2), height - random_int(WIDTH / 2)},
+      {random_int(WIDTH * 2), height - random_int(WIDTH / 2)},
+      {random_int(WIDTH * 2), 0},
+  };
+  for (int16_t x = 0; x < width; x += WIDTH + random_int_b(WIDTH / 4)) {
+    struct Point bezier_point = bezier((float)x / (float)width, bezier_points);
+    ptr->path.point = (struct Point3d){
+        .x = x - width / 2,
+        .y = bezier_point.y + random_int_b(WIDTH / 4),
+        .z = bezier_point.x + random_int_b(WIDTH / 2),
     };
-    ptr->right = i < MOUNTAIN_BASE_POINTS - 1
-                     ? malloc(sizeof(struct MountainPointTree))
-                     : NULL;
-    _create_mountain_path(ptr);
-    _smooth_path(ptr);
+    _create_mountain_path(&ptr->path);
+    _smooth_path(&ptr->path);
+    ptr->right = malloc(sizeof(struct MountainPointTree));
     ptr = ptr->right;
   }
+
+  // Last point.
+  {
+    struct Point bezier_point = bezier(1.0f, bezier_points);
+    ptr->path.point = (struct Point3d){
+        .x = width / 2,
+        .y = 0.0f,
+        .z = bezier_point.x,
+    };
+    ptr->path.down = NULL;
+    ptr->right = NULL;
+  }
+
   return tree;
 }
 
 static void _free_mountain(struct MountainPointTree *tree) {
   while (tree) {
-    if (tree->right) {
-      _free_mountain(tree->right);
+    struct MountainPointPath *path = &tree->path;
+    while (path) {
+      struct MountainPointPath *prev = path;
+      path = path->down;
+      free(path);
     }
     struct MountainPointTree *prev = tree;
-    tree = tree->down;
+    tree = tree->right;
     free(prev);
   }
 }
 
-static void _draw_path(struct Image *image, int16_t x_center, int16_t y,
-                       struct MountainPointTree *left,
-                       struct MountainPointTree *right) {
-  bool left_side = true;
-  while (left->down || right->down) {
-    bool both = left->down && right->down;
-    struct Point3d points[3];
-    if (both ? left_side : !!left->down) {
-      points[0] = left->point;
-      points[1] = left->down->point;
-      points[2] = right->point;
-      left = left->down;
-    } else if (right->down) {
-      points[0] = left->point;
-      points[1] = right->down->point;
-      points[2] = right->point;
-      right = right->down;
-    }
-
-    static struct Point3d sun_direction = {0.0, 1.0, 1.0};
-    struct Point3d normal = compute_normal_from_triangle(points);
-    float vshadow = normal.x * 0.5 + normal.z + 0.1;
-    uint8_t shadow = vshadow > 0.0f ? (vshadow > 1.0f ? 128 : 128 * vshadow) : 0;
+static inline void _draw_poly(struct Image *image, int16_t x_center, int16_t y,
+                              struct Point3d *points) {
+  struct Point3d normal = compute_normal_from_triangle(points);
+  float vshadow = normal.x * 0.5 + normal.z + 0.1;
+  uint8_t shadow = vshadow > 0.0f ? (vshadow > 1.0f ? 220 : 220 * vshadow) : 0;
 #define TO_POINT(p) ((struct Point){p.x + x_center, y - p.y})
-    struct Point points_2d[3] = {
+  struct Point points_2d[3] = {
       TO_POINT(points[0]),
       TO_POINT(points[1]),
       TO_POINT(points[2]),
-    };
+  };
 #undef TO_POINT
-    polyfill(image, points_2d, 3, _leaves_color, 64 + shadow, _background_color);
+  polyfill(image, points_2d, 3, _leaves_color, 32 + shadow, _background_color);
+}
+
+static void _draw_path(struct Image *image, int16_t x_center, int16_t y,
+                       struct MountainPointPath *left,
+                       struct MountainPointPath *right) {
+  bool left_side = true;
+  for (;;) {
+    bool both = left->down && right->down;
+    if (both ? left_side : !!left->down) {
+      struct Point3d points[3] = {left->point, left->down->point, right->point};
+      _draw_poly(image, x_center, y, points);
+      left = left->down;
+    } else if (right->down) {
+      struct Point3d points[3] = {left->point, right->down->point,
+                                  right->point};
+      _draw_poly(image, x_center, y, points);
+      right = right->down;
+    } else {
+      break;
+    }
+
     left_side = !left_side;
   }
 }
@@ -127,7 +152,7 @@ static void _draw_path(struct Image *image, int16_t x_center, int16_t y,
 static void _draw(struct Image *image, int16_t x_center, int16_t y,
                   struct MountainPointTree *tree) {
   while (tree->right) {
-    _draw_path(image, x_center, y, tree, tree->right);
+    _draw_path(image, x_center, y, &tree->path, &tree->right->path);
     tree = tree->right;
   }
 }

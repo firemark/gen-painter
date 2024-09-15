@@ -29,7 +29,7 @@ void landscape_draw(struct Image *image) {
 }
 
 static void _draw_mountains(struct Image *image) {
-  int16_t mountain_height = 200 + random_int(200);
+  int16_t mountain_height = 300 + random_int(200);
   int16_t mountain_width = 1000 + random_int(400);
   int16_t x_center = IMAGE_WIDTH / 2 + random_int(100) - 200;
   if (random_int(32) > 24) {
