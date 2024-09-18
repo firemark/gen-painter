@@ -43,7 +43,7 @@ static int _sort_edge(const void *aa, const void *bb) {
 
 
 void polyfill(struct Image *image, struct Point *points, uint8_t size,
-              enum Color color, int8_t threshold, enum Color bg_color) {
+              enum Color color, uint8_t threshold, enum Color bg_color) {
   uint8_t i;
   struct Edge *edges = malloc(sizeof(struct Edge) * size);
   struct Edge **active_edges = malloc(sizeof(struct Edge *) * size);

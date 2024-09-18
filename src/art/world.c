@@ -2,6 +2,7 @@
 #include "art/_share.h"
 #include "art/image/3d.h"
 #include "art/object/grass.h"
+#include "art/object/house.h"
 #include "art/object/road.h"
 #include "art/object/street_light.h"
 #include "art/object/tree.h"
@@ -20,10 +21,12 @@ static void _setup_init(struct World *world);
 static void _setup_road(struct World *world);
 static void _setup_trees(struct World *world);
 static void _setup_grass(struct World *world);
+static void _setup_house(struct World *world);
 
 void world_setup(struct World *world) {
   _setup_init(world);
   _setup_road(world);
+  _setup_house(world);
   _setup_trees(world);
   _setup_grass(world);
 
@@ -90,9 +93,39 @@ static void _setup_grass(struct World *world) {
         continue;
       }
 
-      *cell = random_int(32) > 30 ? EMPTY : GRASS;
+      *cell = random_int(32) > 14 ? EMPTY : GRASS;
     }
   }
+}
+
+static void _setup_house(struct World *world) {
+  int16_t size;
+  struct Point p;
+  uint8_t i = random_int(2);
+  for (;;) {
+    size = 8 + random_int(2);
+    if (i++ % 2) {
+      p.x = world->road.x + world->road.width + 2;
+    } else {
+      p.x = world->road.x - 2 - size;
+    }
+    p.y = 8;
+    if (p.x >= 0 && p.y >= 0 && p.x + size < GRID_SIZE_W && p.y + size < GRID_SIZE_W) {
+      break;
+    }
+  }
+
+  world->house.position = p;
+  world->house.size = size;
+  world->house.visible = random_int(32) > 4;
+  world->house.visible = true;
+  for (uint8_t y = 0; y < size; y++) {
+    for (uint8_t x = 0; x < size; x++) {
+      world->grid[p.y + y][p.x + x] = EMPTY;
+    }
+  }
+
+  world->grid[p.y][p.x] = HOUSE;
 }
 
 static void _draw_tree(struct Image *image, int16_t hor, int16_t x, int16_t y);
@@ -100,6 +133,7 @@ static void _draw_grass(struct Image *image, int16_t hor, int16_t x, int16_t y);
 static void _draw_road(struct Image *image, int16_t hor, struct Road *road);
 static void _draw_street_light(struct Image *image, enum StreetLighStyle style,
                                int16_t hor, int16_t x, int16_t y);
+static void _draw_house(struct Image *image, int16_t hor, struct House *house);
 
 #define INVOKE_CB(cb)                                                          \
   {                                                                            \
@@ -107,11 +141,13 @@ static void _draw_street_light(struct Image *image, enum StreetLighStyle style,
     break;                                                                     \
   }
 
-void world_draw_back(struct Image *image, struct World *world, int16_t horizont) {
+void world_draw_back(struct Image *image, struct World *world,
+                     int16_t horizont) {
   _draw_road(image, horizont, &world->road);
 }
 
-void world_draw_front(struct Image *image, struct World *world, int16_t horizont) {
+void world_draw_front(struct Image *image, struct World *world,
+                      int16_t horizont) {
   int16_t x, y;
   for (y = GRID_SIZE_H - 1; y >= 0; y--) {
     if (y % 6 == 0) {
@@ -131,6 +167,10 @@ void world_draw_front(struct Image *image, struct World *world, int16_t horizont
         INVOKE_CB(_draw_grass);
       case TREE:
         INVOKE_CB(_draw_tree);
+      case HOUSE: {
+        _draw_house(image, horizont, &world->house);
+        break;
+      }
       case NOT_FILLED:
       case EMPTY:
       case ROAD:
@@ -138,6 +178,7 @@ void world_draw_front(struct Image *image, struct World *world, int16_t horizont
       }
     }
   }
+
 }
 
 static inline float _g_(float x) { return x * GRID_CELL_SIZE; }
@@ -147,7 +188,7 @@ static inline float _y_(float y) { return FOV * 5 + _g_(y) * 8; }
 static void _draw_tree(struct Image *image, int16_t hor, int16_t x, int16_t y) {
   struct Point3d position = {_x_(x), 0.0f, _y_(y)};
   struct Point point = to_screen_from_3d(hor, position);
-  float height_ratio = GRID_CELL_SIZE * 50 / position.z;
+  float height_ratio = GRID_CELL_SIZE * FOV / position.z;
   int16_t tree_height =
       (_tree_config.tree_height + random_int(50)) * height_ratio;
   tree_generate(point, tree_height, &_tree_config.tree);
@@ -182,4 +223,10 @@ static void _draw_street_light(struct Image *image, enum StreetLighStyle style,
   struct Point point = to_screen_from_3d(hor, position);
   float height = _g_(6000.0f) / position.z;
   street_light_draw(image, style, point, height / 4, height);
+}
+
+static void _draw_house(struct Image *image, int16_t hor, struct House *house) {
+  struct Point3d p0 = {_x_(house->position.x), 0.0f, _y_(house->position.y)};
+  struct Point3d p1 = {_x_(house->position.x + house->size), 0.0f, _y_(house->position.y + house->size)};
+  house_draw(image, hor, p0, p1, 40.0);
 }

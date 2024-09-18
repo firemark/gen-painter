@@ -115,7 +115,7 @@ static inline void _draw_poly(struct Image *image, int16_t x_center, int16_t y,
                               struct Point3d *points) {
   struct Point3d normal = compute_normal_from_triangle(points);
   float vshadow = normal.x * 0.5 + normal.z + 0.1;
-  uint8_t shadow = vshadow > 0.0f ? (vshadow > 1.0f ? 220 : 220 * vshadow) : 0;
+  uint8_t shadow = vshadow > 0.0f ? (vshadow > 1.0f ? 196 : 196 * vshadow) : 0;
 #define TO_POINT(p) ((struct Point){p.x + x_center, y - p.y})
   struct Point points_2d[3] = {
       TO_POINT(points[0]),
@@ -123,7 +123,7 @@ static inline void _draw_poly(struct Image *image, int16_t x_center, int16_t y,
       TO_POINT(points[2]),
   };
 #undef TO_POINT
-  polyfill(image, points_2d, 3, _leaves_color, 32 + shadow, _background_color);
+  polyfill(image, points_2d, 3, _leaves_color, shadow, _background_color);
 }
 
 static void _draw_path(struct Image *image, int16_t x_center, int16_t y,
