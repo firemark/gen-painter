@@ -6,7 +6,8 @@
 #define TO_3D(x, y, z) to_screen_from_3d(horizon, (struct Point3d){x, y, z})
 
 void road_draw(struct Image *image, int16_t horizon, float xa,
-               float width) {
+               float width)
+{
   float xb = xa + width;
   float y = 0.0f;
   float z_start = FOV * 4;
@@ -20,26 +21,34 @@ void road_draw(struct Image *image, int16_t horizon, float xa,
   struct Point a_end = TO_3D(xa, y, z_end);
   struct Point b_end = TO_3D(xb, y, z_end);
 
-  {
-    struct Line line_a = {color, 3, a_start, a_end};
-    struct Line line_b = {color, 3, b_start, b_end};
-    image_draw_line(image, &line_a);
-    image_draw_line(image, &line_b);
-  }
-
-  {
+  { // Background
     struct Point points[] = {a_start, b_start, a_end, b_end};
     polyfill(image, points, sizeof(points) / sizeof(struct Point),
-             _branches_color, 48, _leaves_color);
+             color, 32, _leaves_color);
   }
 
-  float z;
-  float x_center = xa + width / 2;
-  for (z = z_start; z < z_lane_end; z += 100.0f) {
-    struct Point a0 = TO_3D(x_center, y, z);
-    struct Point a1 = TO_3D(x_center, y, z + 50.0f);
-
-    struct Line line_a = {color, 1000 / z, a0, a1};
-    image_draw_line(image, &line_a);
+  // Side gradient
+  dithering_array_random();
+  const int gradient_step = 5;
+  int16_t border_size = 20;
+  for (int i = 0; i < gradient_step; i++)
+  {
+    int16_t l = -border_size / 2 + border_size / gradient_step * i;
+    int16_t r = l + border_size / gradient_step;
+    struct Point points_a[3] = {
+        TO_3D(xa - l, y, z_start),
+        TO_3D(xa - r, y, z_start),
+        a_end,
+    };
+    struct Point points_b[3] = {
+        TO_3D(xb + l, y, z_start),
+        TO_3D(xb + r, y, z_start),
+        b_end,
+    };
+    int ii = i >= gradient_step / 2 ? gradient_step - i - 1: i; 
+    uint8_t threshold = 50 + 70.0 / (gradient_step / 2) * ii;
+    // uint8_t threshold = 55 + 115.0 / gradient_step * i;
+    polyfill(image, points_a, 3, color, threshold, TRANSPARENT);
+    polyfill(image, points_b, 3, color, threshold, TRANSPARENT);
   }
 }

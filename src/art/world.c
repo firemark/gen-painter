@@ -100,6 +100,9 @@ static void _setup_grass(struct World *world) {
 }
 
 static void _setup_house(struct World *world) {
+  if (random_int(100) > 50) {
+    return; // Don't draw the house.
+  }
   int16_t x_size;
   int16_t y_size;
   struct Point p;
