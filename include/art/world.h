@@ -16,7 +16,8 @@ struct World {
   enum StreetLighStyle street_light_style;
   struct House {
     bool visible;
-    int16_t size;
+    int16_t x_size;
+    int16_t y_size;
     struct Point position;
   } house;
   struct Road {

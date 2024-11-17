@@ -105,7 +105,12 @@ void art_make(struct ArtData data) {
 }
 
 void art_draw(struct Image *image) {
-  image_clear(image, _background_color);
+  if (_background_color != WHITE) {
+    image_clear(image, _background_color);
+  } else {
+    image_draw_rectangle(image, WHITE, 192, BLACK, (struct Point){0, 0},
+                         (struct Point){IMAGE_WIDTH, IMAGE_HEIGHT});
+  }
   int16_t horizont = IMAGE_HEIGHT - _horizont_height;
 
   sun_draw(image);

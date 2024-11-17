@@ -14,8 +14,8 @@ void grass_draw(struct Image *image, int16_t xa, int16_t xb, int16_t y, int16_t 
     int16_t r = random_int(30) - 15;
     struct Point points[4] = {
         {x, yy},
-        {x - r / 2, yy - tall * 2},
-        {x + r / 2, yy - tall * 3},
+        {x - r / 3, yy - tall * 2},
+        {x + r / 3, yy - tall * 3},
         {x + r, yy - tall * 4},
     };
     for (uint8_t i = 0; i < 3; i++) {

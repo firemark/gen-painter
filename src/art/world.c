@@ -65,8 +65,9 @@ static void _setup_trees(struct World *world) {
       .top_rot = random_range(300, 900),
       .bottom_rot = random_range(100, 400),
   };
-  _tree_config.count = 1 + random_int(3);
-  _tree_config.tree_height = 200 - 30 * _tree_config.count;
+  _tree_config.count = 1 + random_int(7);
+  int16_t dec = 30 * _tree_config.count;
+  _tree_config.tree_height = 200 - (dec > 100 ? 100 : dec);
 
   uint8_t x, y;
   uint8_t tree_count = _tree_config.count;
@@ -99,28 +100,31 @@ static void _setup_grass(struct World *world) {
 }
 
 static void _setup_house(struct World *world) {
-  int16_t size;
+  int16_t x_size;
+  int16_t y_size;
   struct Point p;
   uint8_t i = random_int(2);
   for (;;) {
-    size = 8 + random_int(2);
+    y_size = 8 + random_int(2);
+    x_size = y_size + random_int(4);
     if (i++ % 2) {
       p.x = world->road.x + world->road.width + 2;
     } else {
-      p.x = world->road.x - 2 - size;
+      p.x = world->road.x - 2 - x_size;
     }
-    p.y = 8;
-    if (p.x >= 0 && p.y >= 0 && p.x + size < GRID_SIZE_W && p.y + size < GRID_SIZE_W) {
+    p.y = 8 + random_int_b(4);
+    if (p.x >= 0 && p.y >= 0 && p.x + x_size < GRID_SIZE_W && p.y + y_size < GRID_SIZE_W) {
       break;
     }
   }
 
   world->house.position = p;
-  world->house.size = size;
+  world->house.x_size = x_size;
+  world->house.y_size = y_size;
   world->house.visible = random_int(32) > 4;
   world->house.visible = true;
-  for (uint8_t y = 0; y < size; y++) {
-    for (uint8_t x = 0; x < size; x++) {
+  for (uint8_t y = 0; y < y_size; y++) {
+    for (uint8_t x = 0; x < x_size; x++) {
       world->grid[p.y + y][p.x + x] = EMPTY;
     }
   }
@@ -204,7 +208,7 @@ static void _draw_grass(struct Image *image, int16_t hor, int16_t x,
   struct Point3d position_b = {_x_(x), 0.0f, _y_(y)};
   struct Point point_a = to_screen_from_3d(hor, position_a);
   struct Point point_b = to_screen_from_3d(hor, position_b);
-  float size_factor = 200 + random_int(100);
+  float size_factor = 100 + random_int(100);
   float size = _g_(size_factor) / position_a.z;
   grass_draw(image, point_a.x, point_b.x, point_a.y, size);
 }
@@ -227,6 +231,6 @@ static void _draw_street_light(struct Image *image, enum StreetLighStyle style,
 
 static void _draw_house(struct Image *image, int16_t hor, struct House *house) {
   struct Point3d p0 = {_x_(house->position.x), 0.0f, _y_(house->position.y)};
-  struct Point3d p1 = {_x_(house->position.x + house->size), 0.0f, _y_(house->position.y + house->size)};
+  struct Point3d p1 = {_x_(house->position.x + house->x_size), 0.0f, _y_(house->position.y + house->y_size)};
   house_draw(image, hor, p0, p1, 40.0);
 }
