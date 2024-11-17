@@ -150,6 +150,8 @@ int main(int argc, char *args[]) {
         }
         core(screenSurface);
         SDL_UpdateWindowSurface(window);
+      } else {
+        SDL_UpdateWindowSurface(window);
       }
     }
   }
