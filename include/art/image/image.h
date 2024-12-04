@@ -47,6 +47,7 @@ void image_destroy(struct Image *image);
 void image_clear(struct Image *image, enum Color color);
 void image_draw_hline(struct Image *image, int16_t y, int16_t x0, int16_t x1,
                       enum Color color, uint8_t threshold, enum Color bg_color);
+void image_draw_hline_mirror(struct Image *image, int16_t y, int16_t x0, int16_t x1, int horizont);
 void image_draw_line(struct Image *image, struct Line *line);
 void image_draw_circle(struct Image *image, struct Circle *circle);
 void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,

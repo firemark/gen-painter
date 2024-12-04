@@ -75,6 +75,27 @@ void image_clear(struct Image *image, enum Color color) {
   }
 }
 
+static inline enum Color _image_get_pixel(struct Image *image, uint16_t x, uint16_t y) {
+  if (x >= IMAGE_WIDTH || y >= IMAGE_HEIGHT) {
+    return TRANSPARENT;
+  }
+  uint8_t chunk = y / IMAGE_HEIGHT_CHUNK;
+  uint32_t index =
+      (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
+  uint8_t *byte = &image->buffer[chunk][index];
+  switch (x & 0b11) {
+  case 0:
+    return *byte & 0b11;
+  case 1:
+    return (*byte >> 2) & 0b11;
+  case 2:
+    return (*byte >> 4) & 0b11;
+  case 3:
+    return (*byte >> 6) & 0b11;
+  }
+  return TRANSPARENT;
+}
+
 static inline void _image_set_pixel(struct Image *image, enum Color color,
                                     uint16_t x, uint16_t y) {
   if (color == TRANSPARENT) {
@@ -294,6 +315,27 @@ void image_draw_hline(struct Image *image, int16_t y, int16_t x0, int16_t x1,
     _image_set_pixel(image, z ? color : bg_color, x, y);
   }
 }
+
+void image_draw_hline_mirror(struct Image *image, int16_t y, int16_t x0, int16_t x1,
+                      int horizont) {
+  int16_t x;
+  if (x0 > x1) {
+    // Swap.
+    int16_t z = x0;
+    x0 = x1;
+    x1 = z;
+  }
+  uint16_t yy = y * y;
+
+  CLIP(x0, x1, IMAGE_WIDTH - 1);
+  int dy = horizont - y;
+  int mirror_y = horizont + dy;
+  for (x = x0; x <= x1; x++) {
+    enum Color color = _image_get_pixel(image, x + random_int_b(4), mirror_y);
+    _image_set_pixel(image, color, x, y);
+  }
+}
+
 
 void image_draw_line(struct Image *image, struct Line *line) {
   int16_t x0 = line->p0.x;
