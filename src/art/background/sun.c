@@ -3,10 +3,10 @@
 
 #include "art/_share.h"
 
-static void _draw_sun(struct Image *image);
-static void _draw_moon(struct Image *image);
+static void _draw_sun(struct Image* image);
+static void _draw_moon(struct Image* image);
 
-void sun_draw(struct Image *image) {
+void sun_draw(struct Image* image) {
   uint8_t hour = _data.minute / 60;
   if (hour < 6) {
     return;
@@ -33,7 +33,7 @@ static inline float minute_to_angle(uint16_t minute) {
   return minute * M_PI / (12.0 * 60.0);
 }
 
-static void _draw_sun(struct Image *image) {
+static void _draw_sun(struct Image* image) {
   float angle = minute_to_angle(_data.minute - 6 * 60);
   int16_t x = angle_to_x(angle);
   int16_t y = angle_to_y(angle);
@@ -46,7 +46,7 @@ static void _draw_sun(struct Image *image) {
                               _background_color);
 }
 
-static void _draw_moon(struct Image *image) {
+static void _draw_moon(struct Image* image) {
   float angle = 2.0 * minute_to_angle(_data.minute - 18 * 60);
   int16_t x = angle_to_x(angle);
   int16_t y = angle_to_y(angle);

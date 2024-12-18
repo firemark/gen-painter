@@ -17,19 +17,19 @@ struct Cloud {
 static uint8_t _i;
 static enum Color _bg_color;
 
-static void _draw_background_cloud_fancy(struct Image *image,
-                                         struct Cloud *cloud, uint8_t treshold,
+static void _draw_background_cloud_fancy(struct Image* image,
+                                         struct Cloud* cloud, uint8_t treshold,
                                          int16_t x_shift, int16_t y_shift,
                                          uint8_t size, enum Color bg_color);
 
-static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
+static void _draw_background_cloud(struct Image* image, struct Cloud* cloud,
                                    uint8_t step);
 
 uint8_t clouds_init(void) {
   _bg_color = _background_color == WHITE ? BLACK : _background_color;
 }
 
-void clouds_draw(struct Image *image) {
+void clouds_draw(struct Image* image) {
   uint8_t i;
   uint8_t clouds_count = _data.clouds_count;
   for (i = 0; i < clouds_count; i++) {
@@ -44,7 +44,7 @@ void clouds_draw(struct Image *image) {
   }
 }
 
-static void _draw_background_cloud_bar(struct Image *image, int16_t x_start,
+static void _draw_background_cloud_bar(struct Image* image, int16_t x_start,
                                        int16_t x_end, int16_t y, uint8_t width,
                                        uint8_t size, uint8_t threshold) {
   int16_t x = x_start;
@@ -61,8 +61,8 @@ static void _draw_background_cloud_bar(struct Image *image, int16_t x_start,
   }
 }
 
-static void _draw_background_cloud_fancy(struct Image *image,
-                                         struct Cloud *cloud, uint8_t treshold,
+static void _draw_background_cloud_fancy(struct Image* image,
+                                         struct Cloud* cloud, uint8_t treshold,
                                          int16_t x_shift, int16_t y_shift,
                                          uint8_t size, enum Color bg_color) {
   const uint8_t mult = 24;
@@ -93,7 +93,7 @@ static void _draw_background_cloud_fancy(struct Image *image,
   }
 }
 
-static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
+static void _draw_background_cloud(struct Image* image, struct Cloud* cloud,
                                    uint8_t step) {
   const uint8_t mult = 24;
   if (step == 0) {
@@ -102,7 +102,8 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
       int16_t y = cloud->point.y - i * mult;
       int16_t x_start = cloud->point.x + span * i * mult;
       int16_t x_end = cloud->point.x + (cloud->width - span * i) * mult;
-      _draw_background_cloud_bar(image, x_start, x_end, y, 16, 12, 128 - random_int(16));
+      _draw_background_cloud_bar(image, x_start, x_end, y, 16, 12,
+                                 128 - random_int(16));
     }
   } else {
     if (step > 2) {
@@ -111,10 +112,13 @@ static void _draw_background_cloud(struct Image *image, struct Cloud *cloud,
   }
 
   _draw_background_cloud_fancy(image, cloud, 32, 0, 0, 12, TRANSPARENT);
-  _draw_background_cloud_fancy(image, cloud, 128 - 16 - random_int(16), 0, 0, 8, _bg_color);
+  _draw_background_cloud_fancy(image, cloud, 128 - 16 - random_int(16), 0, 0, 8,
+                               _bg_color);
   _draw_background_cloud_fancy(image, cloud, 128, 2, 2, 6, _bg_color);
-  _draw_background_cloud_fancy(image, cloud, 128 - 4 - random_int(4), 0, 0, 2, _bg_color);
-  _draw_background_cloud_fancy(image, cloud, 128 - 4 - random_int(4), -2, -2, 2, _bg_color);
+  _draw_background_cloud_fancy(image, cloud, 128 - 4 - random_int(4), 0, 0, 2,
+                               _bg_color);
+  _draw_background_cloud_fancy(image, cloud, 128 - 4 - random_int(4), -2, -2, 2,
+                               _bg_color);
 
   int8_t r0x = 16 - random_next(&_i);
   int8_t r0y = 16 - random_next(&_i);

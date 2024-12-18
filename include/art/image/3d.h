@@ -1,6 +1,6 @@
 #pragma once
-#include "image.h"
 #include <math.h>
+#include "image.h"
 
 #define FOV 50.0f
 
@@ -19,10 +19,10 @@ static inline struct Point to_screen_from_3d(int16_t horizon,
   };
 }
 
-static inline struct Point3d
-compute_normal_from_triangle(struct Point3d *points) {
+static inline struct Point3d compute_normal_from_triangle(
+    struct Point3d* points) {
   // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-#define SUB(a, b)                                                              \
+#define SUB(a, b) \
   { a.x - b.x, a.y - b.y, a.z - b.z }
   struct Point3d u = SUB(points[1], points[0]);
   struct Point3d v = SUB(points[2], points[0]);
@@ -33,9 +33,9 @@ compute_normal_from_triangle(struct Point3d *points) {
       .z = u.x * v.y - u.y * v.x,
   };
   struct Point3d absn = {
-    .x = fabs(n.x),
-    .y = fabs(n.y),
-    .z = fabs(n.z),
+      .x = fabs(n.x),
+      .y = fabs(n.y),
+      .z = fabs(n.z),
   };
   float max_abs = n.x;
   if (max_abs < n.y) {

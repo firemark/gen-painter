@@ -1,7 +1,7 @@
 #pragma once
-#include "image/image.h"
-#include "art/art_data.h"
 #include <stdint.h>
+#include "art/art_data.h"
+#include "image/image.h"
 
 extern struct ArtData _data;
 

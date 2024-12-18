@@ -27,26 +27,24 @@
     polyfill(image, points, 3, BLACK, threshold, _leaves_color); \
   }
 
-static float _r()
-{
+static float _r() {
   return (float)random_int(16) / 256.0;
 }
 
-static void _draw_grid_roof(struct Image *image, int16_t hor, int16_t x0, int16_t x1, int16_t h0, int16_t h1, int16_t z0, int16_t z1)
-{
+static void _draw_grid_roof(struct Image* image, int16_t hor, int16_t x0,
+                            int16_t x1, int16_t h0, int16_t h1, int16_t z0,
+                            int16_t z1) {
   const int16_t dx = x1 - x0;
   const int16_t dz = z1 - z0;
   const int16_t dh = h1 - h0;
   const double r = 0.0625 / 2;
 
-  for (float i = 0.0; i <= 1.0 - r; i += r)
-  {
+  for (float i = 0.0; i <= 1.0 - r; i += r) {
     int16_t z = z0 + dz * i;
     int16_t h = h0 + dh * i;
     float j = -_r() / 2;
 
-    while (j <= 1.0 - _r() / 2)
-    {
+    while (j <= 1.0 - _r() / 2) {
       float rr = _r();
       int16_t x = x0 + dx * j;
       struct Line line_a = {
@@ -78,15 +76,15 @@ static void _draw_grid_roof(struct Image *image, int16_t hor, int16_t x0, int16_
   image_draw_line(image, &line);
 }
 
-static void _draw_grid_h(struct Image *image, int16_t hor, int16_t x0, int16_t x1, int16_t h0, int16_t h1, int16_t z0, int16_t z1)
-{
+static void _draw_grid_h(struct Image* image, int16_t hor, int16_t x0,
+                         int16_t x1, int16_t h0, int16_t h1, int16_t z0,
+                         int16_t z1) {
   const int16_t dx = x1 - x0;
   const int16_t dz = z1 - z0;
   const int16_t dh = h1 - h0;
   const double r = 0.125;
 
-  for (float i = 0.0; i <= 1.0 - r; i += r)
-  {
+  for (float i = 0.0; i <= 1.0 - r; i += r) {
     int16_t z = z0 + dz * i;
     int16_t h = h0 + dh * i;
     struct Line line = {
@@ -107,15 +105,15 @@ static void _draw_grid_h(struct Image *image, int16_t hor, int16_t x0, int16_t x
   image_draw_line(image, &line);
 }
 
-static void _draw_grid_v(struct Image *image, int16_t hor, int16_t x0, int16_t x1, int16_t h0, int16_t h1, int16_t z0, int16_t z1)
-{
+static void _draw_grid_v(struct Image* image, int16_t hor, int16_t x0,
+                         int16_t x1, int16_t h0, int16_t h1, int16_t z0,
+                         int16_t z1) {
   const int16_t dx = x1 - x0;
   const int16_t dz = z1 - z0;
   const int16_t dh = h1 - h0;
   const double r = 0.125;
 
-  for (float i = 0.0; i <= 1.0 - r; i += r)
-  {
+  for (float i = 0.0; i <= 1.0 - r; i += r) {
     int16_t x = x0 + dx * i;
     int16_t h = h0 + dh * i;
     struct Line line = {
@@ -136,24 +134,24 @@ static void _draw_grid_v(struct Image *image, int16_t hor, int16_t x0, int16_t x
   image_draw_line(image, &line);
 }
 
-static void _draw_door_v(struct Image *image, int16_t hor, int16_t x, int16_t h, int16_t z)
-{
+static void _draw_door_v(struct Image* image, int16_t hor, int16_t x, int16_t h,
+                         int16_t z) {
   const int16_t h_bg_size = 80;
 
   z -= h_bg_size / 2;
 
-  { // Background
+  {  // Background
     struct Point points[4] = {
-      TO_2D(x, 0, z),
-      TO_2D(x, h, z),
-      TO_2D(x, h, z + h_bg_size),
-      TO_2D(x, 0, z + h_bg_size),
+        TO_2D(x, 0, z),
+        TO_2D(x, h, z),
+        TO_2D(x, h, z + h_bg_size),
+        TO_2D(x, 0, z + h_bg_size),
     };
     polyfill(image, points, 4, BLACK, 160, _leaves_color);
     polygon_border(image, points, 4, BLACK, 1);
   }
 
-  for (int16_t zz = 0 ; zz < h_bg_size; zz += 20) {
+  for (int16_t zz = 0; zz < h_bg_size; zz += 20) {
     struct Line line = {
         .color = BLACK,
         .thickness = 1,
@@ -163,20 +161,20 @@ static void _draw_door_v(struct Image *image, int16_t hor, int16_t x, int16_t h,
     image_draw_line(image, &line);
   }
 
-  { // Knob
+  {  // Knob
     int16_t hh = h * 0.5;
     struct Point points[4] = {
-      TO_2D(x, hh, z),
-      TO_2D(x, h, z),
-      TO_2D(x, h, z + 10),
-      TO_2D(x, hh, z + 10),
+        TO_2D(x, hh, z),
+        TO_2D(x, h, z),
+        TO_2D(x, h, z + 10),
+        TO_2D(x, hh, z + 10),
     };
     polyfill(image, points, 4, BLACK, 220, _leaves_color);
   }
 }
 
-static void _draw_window_h(struct Image *image, int16_t hor, int16_t x, int16_t h, int16_t z)
-{
+static void _draw_window_h(struct Image* image, int16_t hor, int16_t x,
+                           int16_t h, int16_t z) {
   const int16_t size = 12;
   const int16_t h_count = 2 + random_int(2);
   const int16_t v_count = 1 + random_int(2);
@@ -192,57 +190,55 @@ static void _draw_window_h(struct Image *image, int16_t hor, int16_t x, int16_t 
   x -= h_bg_size / 2;
   h -= v_bg_size / 2;
 
-  { // Background
+  {  // Background
     struct Point points[4] = {
-      TO_2D(x, h, z),
-      TO_2D(x, h + v_bg_size, z),
-      TO_2D(x + h_bg_size, h + v_bg_size, z),
-      TO_2D(x + h_bg_size, h, z),
+        TO_2D(x, h, z),
+        TO_2D(x, h + v_bg_size, z),
+        TO_2D(x + h_bg_size, h + v_bg_size, z),
+        TO_2D(x + h_bg_size, h, z),
     };
     polyfill(image, points, 4, BLACK, 48, _leaves_color);
     polygon_border(image, points, 4, BLACK, 1);
   }
 
-  { // In border
+  {  // In border
     int16_t xx = x + out_border;
     int16_t hh = h + out_border;
     struct Point points[4] = {
-      TO_2D(xx, hh, z),
-      TO_2D(xx, hh + v_in_bg_size, z),
-      TO_2D(xx + h_in_bg_size, hh + v_in_bg_size, z),
-      TO_2D(xx + h_in_bg_size, hh, z),
+        TO_2D(xx, hh, z),
+        TO_2D(xx, hh + v_in_bg_size, z),
+        TO_2D(xx + h_in_bg_size, hh + v_in_bg_size, z),
+        TO_2D(xx + h_in_bg_size, hh, z),
     };
     polyfill(image, points, 4, BLACK, 72, _leaves_color);
     polygon_border(image, points, 4, BLACK, 2);
   }
 
   // Holes
-  for (uint8_t i = 0; i < h_count; i++)
-  {
-    for (uint8_t j = 0; j < v_count; j++)
-    {
+  for (uint8_t i = 0; i < h_count; i++) {
+    for (uint8_t j = 0; j < v_count; j++) {
       int16_t xx = x + (h_window_size + border) * i + border + out_border;
       int16_t hh = h + (v_window_size + border) * j + border + out_border;
       struct Point points[4] = {
-        TO_2D(xx, hh, z),
-        TO_2D(xx, hh + v_window_size, z),
-        TO_2D(xx + h_window_size, hh + v_window_size, z),
-        TO_2D(xx + h_window_size, hh, z),
+          TO_2D(xx, hh, z),
+          TO_2D(xx, hh + v_window_size, z),
+          TO_2D(xx + h_window_size, hh + v_window_size, z),
+          TO_2D(xx + h_window_size, hh, z),
       };
       polyfill(image, points, 4, _leaves_color, 8, BLACK);
     }
   }
 }
 
-static void _draw_triangle_grid(struct Image *image, int16_t hor, int16_t x, int16_t h0, int16_t h1, int16_t z0, int16_t z1, int16_t z2)
-{
+static void _draw_triangle_grid(struct Image* image, int16_t hor, int16_t x,
+                                int16_t h0, int16_t h1, int16_t z0, int16_t z1,
+                                int16_t z2) {
   const int16_t dz0 = z1 - z0;
   const int16_t dz1 = z2 - z1;
   const int16_t dh = h1 - h0;
   const double r = 0.125;
 
-  for (float i = 0.0; i <= 1.0 - r; i += r)
-  {
+  for (float i = 0.0; i <= 1.0 - r; i += r) {
     int16_t h = h0 + dh * i;
     int16_t z = z0 + dz0 * i;
     struct Line line = {
@@ -254,8 +250,7 @@ static void _draw_triangle_grid(struct Image *image, int16_t hor, int16_t x, int
     image_draw_line(image, &line);
   }
 
-  for (float i = 0.0; i <= 1.0 - r; i += r)
-  {
+  for (float i = 0.0; i <= 1.0 - r; i += r) {
     int16_t h = h1 - dh * i;
     int16_t z = z1 + dz1 * i;
     struct Line line = {
@@ -268,9 +263,8 @@ static void _draw_triangle_grid(struct Image *image, int16_t hor, int16_t x, int
   }
 }
 
-void house_draw(struct Image *image, int16_t hor, struct Point3d p0,
-                struct Point3d p1, int16_t h)
-{
+void house_draw(struct Image* image, int16_t hor, struct Point3d p0,
+                struct Point3d p1, int16_t h) {
   int16_t hh[] = {0, 0.8 * h, 1 * h, 3 * h, 0.6 * h};
   int16_t dxx = p1.x - p0.x;
   int16_t dzz = p1.z - p0.z;
@@ -304,61 +298,55 @@ void house_draw(struct Image *image, int16_t hor, struct Point3d p0,
   struct Point bl1r = TO_2D(p0.x - dx, hh[1], bpz);
   struct Point br1r = TO_2D(p1.x + dx, hh[1], bpz);
 
-  { // Back roof
+  {  // Back roof
     DRAW_POLY4(bl1r, l2r, r2r, br1r, 218);
-    _draw_grid_roof(
-        image, hor,           //
-        p0.x - dx, p1.x + dx, // x
-        hh[1], hh[3],         // h
-        bpz, mid_z);          // z
+    _draw_grid_roof(image, hor,            //
+                    p0.x - dx, p1.x + dx,  // x
+                    hh[1], hh[3],          // h
+                    bpz, mid_z);           // z
   }
 
-  { // Triangles
+  {  // Triangles
     DRAW_POLY3(bl1, l2, fl1, 196);
     DRAW_POLY3(br1, r2, fr1, 196);
 
-    _draw_triangle_grid(
-        image, hor,         //
-        p0.x,               // x
-        hh[2], hh[3],       // h
-        p0.z, mid_z, p1.z); // z
+    _draw_triangle_grid(image, hor,          //
+                        p0.x,                // x
+                        hh[2], hh[3],        // h
+                        p0.z, mid_z, p1.z);  // z
 
-    _draw_triangle_grid(
-        image, hor,         //
-        p1.x,               // x
-        hh[2], hh[3],       // h
-        p0.z, mid_z, p1.z); // z
+    _draw_triangle_grid(image, hor,          //
+                        p1.x,                // x
+                        hh[2], hh[3],        // h
+                        p0.z, mid_z, p1.z);  // z
   }
 
-  { // Sides
+  {  // Sides
     DRAW_POLY4(fl0, fl1, bl1, bl0, 200);
     DRAW_POLY4(fr0, fr1, br1, br0, 200);
 
-    _draw_grid_v(
-        image, hor,   //
-        p0.x, p0.x,   // x
-        hh[0], hh[2], // h
-        p0.z, p1.z);  // z
+    _draw_grid_v(image, hor,    //
+                 p0.x, p0.x,    // x
+                 hh[0], hh[2],  // h
+                 p0.z, p1.z);   // z
 
-    _draw_grid_v(
-        image, hor,   //
-        p1.x, p1.x,   // x
-        hh[0], hh[2], // h
-        p1.z, p0.z);  // z
+    _draw_grid_v(image, hor,    //
+                 p1.x, p1.x,    // x
+                 hh[0], hh[2],  // h
+                 p1.z, p0.z);   // z
 
-    _draw_door_v(image, hor, p0.x, h, mid_z); 
-    _draw_door_v(image, hor, p1.x, h, mid_z); 
+    _draw_door_v(image, hor, p0.x, h, mid_z);
+    _draw_door_v(image, hor, p1.x, h, mid_z);
   }
 
-  { // Front
+  {  // Front
     DRAW_POLY4(fl0, fl1, fr1, fr0, 148);
-    DRAW_POLY4(fl1, fl1x, fr1x, fr1, 200); // Shadow
+    DRAW_POLY4(fl1, fl1x, fr1x, fr1, 200);  // Shadow
 
-    _draw_grid_h(
-        image, hor,   //
-        p0.x, p1.x,   // x
-        hh[0], hh[2], // h
-        p0.z, p0.z);  // z
+    _draw_grid_h(image, hor,    //
+                 p0.x, p1.x,    // x
+                 hh[0], hh[2],  // h
+                 p0.z, p0.z);   // z
 
     int16_t xx0 = p0.x + 0.25 * dxx;
     int16_t xx1 = p0.x + 0.75 * dxx;
@@ -366,12 +354,11 @@ void house_draw(struct Image *image, int16_t hor, struct Point3d p0,
     _draw_window_h(image, hor, xx1, 0.5 * h, p0.z);
   }
 
-  { // Front roof
+  {  // Front roof
     DRAW_POLY4(fl1r, l2r, r2r, fr1r, 100);
-    _draw_grid_roof(
-        image, hor,           //
-        p0.x - dx, p1.x + dx, // x
-        hh[1], hh[3],         // h
-        fpz, mid_z);          // z
+    _draw_grid_roof(image, hor,            //
+                    p0.x - dx, p1.x + dx,  // x
+                    hh[1], hh[3],          // h
+                    fpz, mid_z);           // z
   }
 }

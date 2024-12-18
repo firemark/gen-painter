@@ -4,12 +4,12 @@
 
 #include <math.h>
 
-static void _draw_classic(struct Image *image, struct Point head,
+static void _draw_classic(struct Image* image, struct Point head,
                           struct Line line_stick, int16_t head_height);
-static void _draw_sphere(struct Image *image, struct Point head,
+static void _draw_sphere(struct Image* image, struct Point head,
                          struct Line line_stick, int16_t head_height);
 
-void street_light_draw(struct Image *image, enum StreetLighStyle style,
+void street_light_draw(struct Image* image, enum StreetLighStyle style,
                        struct Point point, int16_t head_height,
                        int16_t height) {
   struct Point head = {point.x, point.y - height};
@@ -33,7 +33,7 @@ void street_light_draw(struct Image *image, enum StreetLighStyle style,
   int16_t hb = head_height / 3;
   int16_t hd = head_height / 5;
 
-  { // Base bottom
+  {  // Base bottom
     line_stick.p0 = (struct Point){point.x - hb, point.y};
     line_stick.p1 = (struct Point){point.x + hb, point.y};
     image_draw_line(image, &line_stick);
@@ -47,13 +47,13 @@ void street_light_draw(struct Image *image, enum StreetLighStyle style,
     image_draw_circle(image, &circle);
   }
 
-  { // Stick bottom
+  {  // Stick bottom
     line_stick_bottom.p0 = point;
     line_stick_bottom.p1 = (struct Point){point.x, point.y - sb};
     image_draw_line(image, &line_stick_bottom);
   }
 
-  { // Base
+  {  // Base
     line_stick.p0 = (struct Point){point.x - hd, point.y - sb};
     line_stick.p1 = (struct Point){point.x + hd, point.y - sb};
     image_draw_line(image, &line_stick);
@@ -68,19 +68,19 @@ void street_light_draw(struct Image *image, enum StreetLighStyle style,
     image_draw_circle(image, &circle);
   }
 
-  { // Stick
+  {  // Stick
     line_stick.p0 = point;
     line_stick.p1 = head;
     image_draw_line(image, &line_stick);
   }
 
   switch (style) {
-  case STREET_LIGHT_CLASSIC:
-    _draw_classic(image, head, line_stick, head_height);
-    break;
-  case STREET_LIGHT_SPHERE:
-    _draw_sphere(image, head, line_stick, head_height);
-    break;
+    case STREET_LIGHT_CLASSIC:
+      _draw_classic(image, head, line_stick, head_height);
+      break;
+    case STREET_LIGHT_SPHERE:
+      _draw_sphere(image, head, line_stick, head_height);
+      break;
   }
 }
 
@@ -101,7 +101,7 @@ float round_point_cache[ROUND_POINT + 1] = {
     0.0,
 };
 
-static void _draw_classic(struct Image *image, struct Point head,
+static void _draw_classic(struct Image* image, struct Point head,
                           struct Line line_stick, int16_t head_height) {
   int16_t ha = head_height / 2;
   int16_t hb = head_height / 3;
@@ -125,7 +125,7 @@ static void _draw_classic(struct Image *image, struct Point head,
     bottom_points[i] = (struct Point){head.x + bottom_shift, head.y + h};
   }
 
-  { // Glass
+  {  // Glass
     struct Point points[2 * (ROUND_POINT + 1)];
     for (i = 0; i <= ROUND_POINT; i++) {
       points[i] = top_points[i];
@@ -135,7 +135,7 @@ static void _draw_classic(struct Image *image, struct Point head,
     polyfill(image, points, size, WHITE, 0xFF, BLACK);
   }
 
-  { // Top
+  {  // Top
     struct Point points[ROUND_POINT + 1 + 1];
     for (i = 0; i <= ROUND_POINT; i++) {
       points[i] = top_points[i];
@@ -145,7 +145,7 @@ static void _draw_classic(struct Image *image, struct Point head,
     polyfill(image, points, size, line_head.color, 0xFF, BLACK);
   }
 
-  { // Circles!
+  {  // Circles!
     struct Circle circle = {
         .color = line_stick.color,
         .d = hd / 2,
@@ -186,17 +186,17 @@ static void _draw_classic(struct Image *image, struct Point head,
   }
 }
 
-static void _draw_sphere(struct Image *image, struct Point head,
+static void _draw_sphere(struct Image* image, struct Point head,
                          struct Line line_stick, int16_t head_height) {
   int16_t ha = head_height / 2;
   int16_t hb = head_height / 3;
-  { // Glass
+  {  // Glass
     struct Circle circle = {
         .color = WHITE, .d = ha, .p = (struct Point){head.x, head.y - ha}};
     image_draw_circle(image, &circle);
   }
 
-  { // Bottom head
+  {  // Bottom head
     line_stick.p0 = (struct Point){head.x - hb, head.y};
     line_stick.p1 = (struct Point){head.x + hb, head.y};
     image_draw_line(image, &line_stick);

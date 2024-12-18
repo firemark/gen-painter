@@ -1,6 +1,6 @@
 #include "art/random_point.h"
-#include "art/random.h"
 #include <stdint.h>
+#include "art/random.h"
 
 static inline struct Point _compute_point(struct Point start, struct Point a,
                                           struct Point b, float ua, float ub) {

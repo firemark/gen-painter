@@ -1,46 +1,46 @@
 #include "art/image/image.h"
-#include "art/random.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include "art/random.h"
 
 #define TO_FIXED_POINT(x) ((x) << 16)
 #define FROM_FIXED_POINT(x) ((x) >> 16)
 
-#define ABORT_IF_OUTSIDE(start, end, length)                                   \
-  {                                                                            \
-    if (end < 0 || start > (length)) {                                         \
-      return;                                                                  \
-    }                                                                          \
+#define ABORT_IF_OUTSIDE(start, end, length) \
+  {                                          \
+    if (end < 0 || start > (length)) {       \
+      return;                                \
+    }                                        \
   }
 
-#define CLIP(start, end, length)                                               \
-  {                                                                            \
-    ABORT_IF_OUTSIDE(start, end, length)                                       \
-    start = start > 0 ? start : 0;                                             \
-    end = end < length ? end : (length);                                       \
+#define CLIP(start, end, length)         \
+  {                                      \
+    ABORT_IF_OUTSIDE(start, end, length) \
+    start = start > 0 ? start : 0;       \
+    end = end < length ? end : (length); \
   }
 
-#define CLIP_FINAL(x, length)                                                  \
-  {                                                                            \
-    if (x < 0) {                                                               \
-      x = 0;                                                                   \
-    } else if (x > (length)) {                                                 \
-      x = (length);                                                            \
-    }                                                                          \
+#define CLIP_FINAL(x, length)  \
+  {                            \
+    if (x < 0) {               \
+      x = 0;                   \
+    } else if (x > (length)) { \
+      x = (length);            \
+    }                          \
   }
 
 static inline uint8_t _threshold(uint8_t threshold, uint16_t z);
 static inline uint8_t _get_threshold_pixel(uint16_t x, uint16_t y,
                                            uint8_t threshold);
 
-struct Image *image_create() {
-  struct Image *image = (struct Image *)malloc(sizeof(struct Image));
+struct Image* image_create() {
+  struct Image* image = (struct Image*)malloc(sizeof(struct Image));
   if (image == NULL) {
     return NULL;
   }
 
   for (uint8_t i = 0; i < BUFFER_CHUNK_COUNT; i++) {
-    image->buffer[i] = (uint8_t *)malloc(IMAGE_SIZE_CHUNK);
+    image->buffer[i] = (uint8_t*)malloc(IMAGE_SIZE_CHUNK);
   }
 
   for (uint8_t i = 0; i < BUFFER_CHUNK_COUNT; i++) {
@@ -52,7 +52,7 @@ struct Image *image_create() {
   return image;
 }
 
-void image_destroy(struct Image *image) {
+void image_destroy(struct Image* image) {
   if (image == NULL) {
     return;
   }
@@ -66,7 +66,7 @@ void image_destroy(struct Image *image) {
   free(image);
 }
 
-void image_clear(struct Image *image, enum Color color) {
+void image_clear(struct Image* image, enum Color color) {
   uint8_t byte = color | (color << 2) | (color << 4) | (color << 6);
   for (uint8_t chunk = 0; chunk < BUFFER_CHUNK_COUNT; chunk++) {
     for (uint32_t i = 0; i < IMAGE_SIZE_CHUNK; i++) {
@@ -75,28 +75,29 @@ void image_clear(struct Image *image, enum Color color) {
   }
 }
 
-static inline enum Color _image_get_pixel(struct Image *image, uint16_t x, uint16_t y) {
+static inline enum Color _image_get_pixel(struct Image* image, uint16_t x,
+                                          uint16_t y) {
   if (x >= IMAGE_WIDTH || y >= IMAGE_HEIGHT) {
     return TRANSPARENT;
   }
   uint8_t chunk = y / IMAGE_HEIGHT_CHUNK;
   uint32_t index =
       (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
-  uint8_t *byte = &image->buffer[chunk][index];
+  uint8_t* byte = &image->buffer[chunk][index];
   switch (x & 0b11) {
-  case 0:
-    return *byte & 0b11;
-  case 1:
-    return (*byte >> 2) & 0b11;
-  case 2:
-    return (*byte >> 4) & 0b11;
-  case 3:
-    return (*byte >> 6) & 0b11;
+    case 0:
+      return *byte & 0b11;
+    case 1:
+      return (*byte >> 2) & 0b11;
+    case 2:
+      return (*byte >> 4) & 0b11;
+    case 3:
+      return (*byte >> 6) & 0b11;
   }
   return TRANSPARENT;
 }
 
-static inline void _image_set_pixel(struct Image *image, enum Color color,
+static inline void _image_set_pixel(struct Image* image, enum Color color,
                                     uint16_t x, uint16_t y) {
   if (color == TRANSPARENT) {
     return;
@@ -107,24 +108,24 @@ static inline void _image_set_pixel(struct Image *image, enum Color color,
   uint8_t chunk = y / IMAGE_HEIGHT_CHUNK;
   uint32_t index =
       (x >> 2) + (y - chunk * IMAGE_HEIGHT_CHUNK) * (IMAGE_WIDTH >> 2);
-  uint8_t *byte = &image->buffer[chunk][index];
+  uint8_t* byte = &image->buffer[chunk][index];
   switch (x & 0b11) {
-  case 0:
-    *byte = (*byte & 0b11111100) | color;
-    break;
-  case 1:
-    *byte = (*byte & 0b11110011) | (color << 2);
-    break;
-  case 2:
-    *byte = (*byte & 0b11001111) | (color << 4);
-    break;
-  case 3:
-    *byte = (*byte & 0b00111111) | (color << 6);
-    break;
+    case 0:
+      *byte = (*byte & 0b11111100) | color;
+      break;
+    case 1:
+      *byte = (*byte & 0b11110011) | (color << 2);
+      break;
+    case 2:
+      *byte = (*byte & 0b11001111) | (color << 4);
+      break;
+    case 3:
+      *byte = (*byte & 0b00111111) | (color << 6);
+      break;
   }
 }
 
-static inline void _image_draw_xline(struct Image *image, enum Color color,
+static inline void _image_draw_xline(struct Image* image, enum Color color,
                                      uint8_t thickness, uint16_t y, uint16_t x0,
                                      uint16_t x1) {
   uint16_t thickness_half = thickness / 2;
@@ -138,7 +139,7 @@ static inline void _image_draw_xline(struct Image *image, enum Color color,
   }
 }
 
-static inline void _image_draw_yline(struct Image *image, enum Color color,
+static inline void _image_draw_yline(struct Image* image, enum Color color,
                                      uint8_t thickness, uint16_t x, uint16_t y0,
                                      uint16_t y1) {
   uint16_t thickness_half = thickness / 2;
@@ -152,7 +153,7 @@ static inline void _image_draw_yline(struct Image *image, enum Color color,
   }
 }
 
-static inline void _image_draw_line_low_simple(struct Image *image,
+static inline void _image_draw_line_low_simple(struct Image* image,
                                                enum Color color, uint16_t y,
                                                uint16_t x0, uint16_t x1,
                                                int16_t i, int16_t dx,
@@ -169,7 +170,7 @@ static inline void _image_draw_line_low_simple(struct Image *image,
   }
 }
 
-static inline void _image_draw_line_high_simple(struct Image *image,
+static inline void _image_draw_line_high_simple(struct Image* image,
                                                 enum Color color, uint16_t x,
                                                 uint16_t y0, uint16_t y1,
                                                 int16_t i, int16_t dx,
@@ -186,7 +187,7 @@ static inline void _image_draw_line_high_simple(struct Image *image,
   }
 }
 
-static inline void _image_draw_line_low(struct Image *image, enum Color color,
+static inline void _image_draw_line_low(struct Image* image, enum Color color,
                                         uint8_t thickness, uint16_t x0,
                                         uint16_t x1, uint16_t y0, uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
@@ -231,7 +232,7 @@ static inline void _image_draw_line_low(struct Image *image, enum Color color,
   }
 }
 
-static inline void _image_draw_line_high(struct Image *image, enum Color color,
+static inline void _image_draw_line_high(struct Image* image, enum Color color,
                                          uint8_t thickness, uint16_t x0,
                                          uint16_t x1, uint16_t y0,
                                          uint16_t y1) {
@@ -276,7 +277,7 @@ static inline void _image_draw_line_high(struct Image *image, enum Color color,
   }
 }
 
-static inline void _image_draw_line(struct Image *image, enum Color color,
+static inline void _image_draw_line(struct Image* image, enum Color color,
                                     uint8_t thickness, uint16_t x0, uint16_t x1,
                                     uint16_t y0, uint16_t y1) {
   // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
@@ -297,7 +298,7 @@ static inline void _image_draw_line(struct Image *image, enum Color color,
   }
 }
 
-void image_draw_hline(struct Image *image, int16_t y, int16_t x0, int16_t x1,
+void image_draw_hline(struct Image* image, int16_t y, int16_t x0, int16_t x1,
                       enum Color color, uint8_t threshold,
                       enum Color bg_color) {
   int16_t x;
@@ -316,8 +317,8 @@ void image_draw_hline(struct Image *image, int16_t y, int16_t x0, int16_t x1,
   }
 }
 
-void image_draw_hline_mirror(struct Image *image, int16_t y, int16_t x0, int16_t x1,
-                      int horizont) {
+void image_draw_hline_mirror(struct Image* image, int16_t y, int16_t x0,
+                             int16_t x1, int horizont) {
   int16_t x;
   if (x0 > x1) {
     // Swap.
@@ -336,8 +337,7 @@ void image_draw_hline_mirror(struct Image *image, int16_t y, int16_t x0, int16_t
   }
 }
 
-
-void image_draw_line(struct Image *image, struct Line *line) {
+void image_draw_line(struct Image* image, struct Line* line) {
   int16_t x0 = line->p0.x;
   int16_t x1 = line->p1.x;
   int16_t y0 = line->p0.y;
@@ -352,19 +352,19 @@ void image_draw_line(struct Image *image, struct Line *line) {
     _image_set_pixel(image, line->color, x0, y0);
   } else if (dx == 0) {
     ABORT_IF_OUTSIDE(x0, x0, IMAGE_WIDTH - 1);
-    if (dy > 0) { // y1 > y0
+    if (dy > 0) {  // y1 > y0
       CLIP(y0, y1, IMAGE_HEIGHT - 1);
       _image_draw_yline(image, line->color, line->thickness, x0, y0, y1);
-    } else { // y0 > y1
+    } else {  // y0 > y1
       CLIP(y1, y0, IMAGE_HEIGHT - 1);
       _image_draw_yline(image, line->color, line->thickness, x0, y1, y0);
     }
   } else if (dy == 0) {
     ABORT_IF_OUTSIDE(y0, y0, IMAGE_WIDTH - 1);
-    if (dx > 0) { // x1 > x0
+    if (dx > 0) {  // x1 > x0
       CLIP(x0, x1, IMAGE_WIDTH - 1);
       _image_draw_xline(image, line->color, line->thickness, y0, x0, x1);
-    } else { // x0 > x1
+    } else {  // x0 > x1
       CLIP(x1, x0, IMAGE_WIDTH - 1);
       _image_draw_xline(image, line->color, line->thickness, y0, x1, x0);
     }
@@ -394,7 +394,7 @@ void image_draw_line(struct Image *image, struct Line *line) {
     }
 
     if (u_min > u_max) {
-      return; // outside of clip window
+      return;  // outside of clip window
     }
 
     int16_t xn0 = x0 + (int16_t)FROM_FIXED_POINT(dx * u_min);
@@ -419,7 +419,7 @@ void image_draw_line(struct Image *image, struct Line *line) {
   }
 }
 
-void image_draw_circle(struct Image *image, struct Circle *circle) {
+void image_draw_circle(struct Image* image, struct Circle* circle) {
   int16_t t1 = circle->d / 16, t2;
   int16_t x0 = circle->p.x;
   int16_t y0 = circle->p.y;
@@ -457,7 +457,7 @@ void image_draw_circle(struct Image *image, struct Circle *circle) {
   }
 }
 
-void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,
+void image_paste_bitmap(struct Image* image, struct Bitmap* bitmap,
                         enum Color color, struct Point p) {
   int16_t x0 = p.x - BITMAP_WIDTH / 2;
   int16_t x1 = x0 + BITMAP_WIDTH - 1;
@@ -484,40 +484,40 @@ void image_paste_bitmap(struct Image *image, struct Bitmap *bitmap,
 
 static inline uint8_t _threshold(uint8_t threshold, uint16_t z) {
   switch (threshold / 16) {
-  case 0:
-    return 0;
-  case 1:
-    return z % 128 == 0;
-  case 2:
-    return z % 64 == 0;
-  case 3:
-    return z % 32 == 0;
-  case 4:
-    return z % 16 == 0;
-  case 5:
-    return z % 8 == 0;
-  case 6:
-    return z % 4 == 0;
-  case 7:
-    return z % 2 == 0;
-  case 8:
-    return z % 4 != 0;
-  case 9:
-    return z % 8 != 0;
-  case 10:
-    return z % 16 != 0;
-  case 11:
-    return z % 32 != 0;
-  case 12:
-    return z % 64 != 0;
-  case 13:
-    return z % 128 != 0;
-  default:
-    return 1;
+    case 0:
+      return 0;
+    case 1:
+      return z % 128 == 0;
+    case 2:
+      return z % 64 == 0;
+    case 3:
+      return z % 32 == 0;
+    case 4:
+      return z % 16 == 0;
+    case 5:
+      return z % 8 == 0;
+    case 6:
+      return z % 4 == 0;
+    case 7:
+      return z % 2 == 0;
+    case 8:
+      return z % 4 != 0;
+    case 9:
+      return z % 8 != 0;
+    case 10:
+      return z % 16 != 0;
+    case 11:
+      return z % 32 != 0;
+    case 12:
+      return z % 64 != 0;
+    case 13:
+      return z % 128 != 0;
+    default:
+      return 1;
   }
 }
 
-static uint32_t *_dithering_array = NULL;
+static uint32_t* _dithering_array = NULL;
 
 char dithering_array_init(void) {
   _dithering_array = malloc(128 * 128 * sizeof(uint32_t));
@@ -566,7 +566,7 @@ static inline uint8_t _get_threshold_pixel(uint16_t x, uint16_t y,
   return (c >> (threshold / 8)) & 1;
 }
 
-void image_draw_rectangle(struct Image *image, enum Color color,
+void image_draw_rectangle(struct Image* image, enum Color color,
                           uint8_t threshold, enum Color bg_color,
                           struct Point p0, struct Point p1) {
   int16_t x0 = p0.x;
@@ -597,7 +597,7 @@ void image_draw_rectangle(struct Image *image, enum Color color,
   }
 }
 
-void image_draw_circle_threshold(struct Image *image, struct Circle *circle,
+void image_draw_circle_threshold(struct Image* image, struct Circle* circle,
                                  uint8_t threshold, enum Color background) {
   int16_t t1 = circle->d / 16, t2;
   int16_t x0 = circle->p.x;

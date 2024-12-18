@@ -16,10 +16,10 @@
 static uint16_t _branches_count;
 static uint16_t _leaves_count;
 
-static struct Line *_branches;
-static struct Circle *_leaves;
+static struct Line* _branches;
+static struct Circle* _leaves;
 
-static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
+static void _tree(uint8_t n, struct Tree* tree, struct Point p, int16_t w,
                   float rot);
 
 uint8_t tree_init(void) {
@@ -33,13 +33,13 @@ void tree_reset(void) {
   _leaves_count = 0;
 }
 
-void tree_generate(struct Point p, uint16_t height, struct Tree *tree) {
+void tree_generate(struct Point p, uint16_t height, struct Tree* tree) {
   float rot = random_range(-50, 50);
 
   _tree(6, tree, p, height, rot);
 }
 
-void tree_draw_back(struct Image *image) {
+void tree_draw_back(struct Image* image) {
   for (uint16_t i = 0; i < _leaves_count; i++) {
     for (uint16_t j = 0; j < 3; j++) {
       uint16_t dx = 16 - random_int(32);
@@ -52,7 +52,7 @@ void tree_draw_back(struct Image *image) {
   }
 }
 
-void tree_draw_front(struct Image *image) {
+void tree_draw_front(struct Image* image) {
   for (uint16_t i = 0; i < _leaves_count; i++) {
     for (uint16_t j = 0; j < 2; j++) {
       uint16_t dx = 16 - random_int(32);
@@ -65,9 +65,9 @@ void tree_draw_front(struct Image *image) {
   }
 }
 
-void tree_draw_branches(struct Image *image) {
+void tree_draw_branches(struct Image* image) {
   for (uint16_t i = 0; i < _branches_count; i++) {
-    struct Line *line = &_branches[i];
+    struct Line* line = &_branches[i];
     image_draw_line(image, line);
     if (line->thickness > 5) {
       struct Circle circle = {
@@ -80,7 +80,9 @@ void tree_draw_branches(struct Image *image) {
   }
 }
 
-static inline float _thickness(int16_t w) { return w * w / 2048.0 + 1.0; }
+static inline float _thickness(int16_t w) {
+  return w * w / 2048.0 + 1.0;
+}
 
 static void _leaf(struct Point p, uint16_t size) {
   if (_leaves_count >= LEAFES_SIZE) {
@@ -94,7 +96,7 @@ static void _leaf(struct Point p, uint16_t size) {
   };
 }
 
-static void _tree(uint8_t n, struct Tree *tree, struct Point p, int16_t w,
+static void _tree(uint8_t n, struct Tree* tree, struct Point p, int16_t w,
                   float rot) {
   if (n < tree->top_start && random_int(100) > n * 8) {
     _leaf(p, w / 20 + random_int(5));

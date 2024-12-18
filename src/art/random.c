@@ -9,7 +9,7 @@ void random_shuffle_array(void) {
   }
 }
 
-int8_t random_next(uint8_t *index) {
+int8_t random_next(uint8_t* index) {
   *index = (*index + 1) % sizeof(_array);
   return _array[*index];
 }

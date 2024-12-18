@@ -18,7 +18,7 @@ enum Color _background_color;
 enum Color _leaves_color;
 enum Color _branches_color;
 
-static void _rain(struct Image *image) {
+static void _rain(struct Image* image) {
   uint16_t density = _data.rain_density < 2000 ? _data.rain_density : 2000;
   for (uint16_t i = 0; i < density; i++) {
     struct Point p0 = {random_int(IMAGE_WIDTH), random_int(IMAGE_HEIGHT)};
@@ -33,7 +33,7 @@ static void _rain(struct Image *image) {
   }
 }
 
-static void _snow(struct Image *image) {
+static void _snow(struct Image* image) {
   uint16_t density = _data.snow_density < 2000 ? _data.snow_density : 2000;
   for (uint16_t i = 0; i < density; i++) {
     struct Point p = {random_int(IMAGE_WIDTH), random_int(IMAGE_HEIGHT)};
@@ -60,26 +60,26 @@ static void _snow(struct Image *image) {
 
 static void _random_colors(void) {
   switch (random_int(4)) {
-  case 0: // Day
-    _background_color = WHITE;
-    _leaves_color = RED;
-    _branches_color = BLACK;
-    break;
-  case 1: // Night 1
-    _background_color = BLACK;
-    _leaves_color = WHITE;
-    _branches_color = RED;
-    break;
-  case 2: // Night 2
-    _background_color = BLACK;
-    _leaves_color = RED;
-    _branches_color = WHITE;
-    break;
-  case 3: // Afternoon
-    _background_color = RED;
-    _leaves_color = WHITE;
-    _branches_color = BLACK;
-    break;
+    case 0:  // Day
+      _background_color = WHITE;
+      _leaves_color = RED;
+      _branches_color = BLACK;
+      break;
+    case 1:  // Night 1
+      _background_color = BLACK;
+      _leaves_color = WHITE;
+      _branches_color = RED;
+      break;
+    case 2:  // Night 2
+      _background_color = BLACK;
+      _leaves_color = RED;
+      _branches_color = WHITE;
+      break;
+    case 3:  // Afternoon
+      _background_color = RED;
+      _leaves_color = WHITE;
+      _branches_color = BLACK;
+      break;
   }
 }
 
@@ -104,7 +104,7 @@ void art_make(struct ArtData data) {
   _horizont_height = landscape_generate();
 }
 
-void art_draw(struct Image *image) {
+void art_draw(struct Image* image) {
   if (_background_color != WHITE) {
     image_clear(image, _background_color);
   } else {
