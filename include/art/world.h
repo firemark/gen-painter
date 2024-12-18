@@ -7,19 +7,21 @@
 #define GRID_SIZE_H 20
 #define GRID_SIZE_W 50
 
-enum WorldCell { NOT_FILLED, EMPTY, GRASS, ROAD, TREE, HOUSE };
+enum WorldCell { NOT_FILLED, EMPTY, GRASS, ROAD, TREE, HOUSE, LAKE };
+
+struct LargeObject {
+    bool visible;
+    int16_t x_size;
+    int16_t y_size;
+    struct Point position;
+};
 
 struct World {
   enum WorldCell grid[GRID_SIZE_H][GRID_SIZE_W];
   bool has_right_light;
   bool has_left_light;
   enum StreetLighStyle street_light_style;
-  struct House {
-    bool visible;
-    int16_t x_size;
-    int16_t y_size;
-    struct Point position;
-  } house;
+  struct LargeObject object;
   struct Road {
     int16_t width;
     int16_t x;

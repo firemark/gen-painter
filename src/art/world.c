@@ -3,6 +3,7 @@
 #include "art/image/3d.h"
 #include "art/object/grass.h"
 #include "art/object/house.h"
+#include "art/object/lake.h"
 #include "art/object/road.h"
 #include "art/object/street_light.h"
 #include "art/object/tree.h"
@@ -25,12 +26,12 @@ static void _setup_init(struct World* world);
 static void _setup_road(struct World* world);
 static void _setup_trees(struct World* world);
 static void _setup_grass(struct World* world);
-static void _setup_house(struct World* world);
+static void _setup_large_object(struct World* world);
 
 void world_setup(struct World* world) {
   _setup_init(world);
   _setup_road(world);
-  _setup_house(world);
+  _setup_large_object(world);
   _setup_trees(world);
   _setup_grass(world);
 
@@ -103,41 +104,65 @@ static void _setup_grass(struct World* world) {
   }
 }
 
-static void _setup_house(struct World* world) {
-  if (random_int(100) > 50) {
-    return;  // Don't draw the house.
+static void _setup_large_object(struct World* world) {
+  // if (random_int(32) < 4) {
+  //   // Don't draw.
+  //   world->object.visible = false;
+  //   return;
+  // }
+
+  enum WorldCell cell;
+  int16_t x_min_size;
+  int16_t y_min_size;
+  int16_t y_start;
+  switch (1 /*random_int(2)*/) {
+    case 0: {
+      x_min_size = 8;
+      y_min_size = 8;
+      y_start = 8;
+      cell = HOUSE;
+      break;
+    }
+    case 1: {
+      x_min_size = 14;
+      y_min_size = 14;
+      y_start = 4;
+      cell = LAKE;
+      break;
+    }
   }
+
   int16_t x_size;
   int16_t y_size;
   struct Point p;
   uint8_t i = random_int(2);
   for (;;) {
-    y_size = 8 + random_int(2);
-    x_size = y_size + random_int(4);
+    y_size = y_min_size + random_int_b(2);
+    x_size = x_min_size + random_int_b(2);
     if (i++ % 2) {
       p.x = world->road.x + world->road.width + 2;
     } else {
       p.x = world->road.x - 2 - x_size;
     }
-    p.y = 8 + random_int_b(4);
+    p.y = 4 + random_int_b(4);
     if (p.x >= 0 && p.y >= 0 && p.x + x_size < GRID_SIZE_W &&
-        p.y + y_size < GRID_SIZE_W) {
+        p.y + y_size < GRID_SIZE_H) {
       break;
     }
   }
 
-  world->house.position = p;
-  world->house.x_size = x_size;
-  world->house.y_size = y_size;
-  world->house.visible = random_int(32) > 4;
-  world->house.visible = true;
+  world->object.position = p;
+  world->object.x_size = x_size;
+  world->object.y_size = y_size;
+  world->object.visible = true;
   for (uint8_t y = 0; y < y_size; y++) {
     for (uint8_t x = 0; x < x_size; x++) {
       world->grid[p.y + y][p.x + x] = EMPTY;
     }
   }
 
-  world->grid[p.y][p.x] = HOUSE;
+  cell = LAKE;
+  world->grid[p.y][p.x] = cell;
 }
 
 static void _draw_tree(struct Image* image, int16_t hor, int16_t x, int16_t y);
@@ -145,7 +170,10 @@ static void _draw_grass(struct Image* image, int16_t hor, int16_t x, int16_t y);
 static void _draw_road(struct Image* image, int16_t hor, struct Road* road);
 static void _draw_street_light(struct Image* image, enum StreetLighStyle style,
                                int16_t hor, int16_t x, int16_t y);
-static void _draw_house(struct Image* image, int16_t hor, struct House* house);
+static void _draw_house(struct Image* image, int16_t hor,
+                        struct LargeObject* house);
+static void _draw_lake(struct Image* image, int16_t hor,
+                       struct LargeObject* house);
 
 #define INVOKE_CB(cb)          \
   {                            \
@@ -180,7 +208,11 @@ void world_draw_front(struct Image* image, struct World* world,
         case TREE:
           INVOKE_CB(_draw_tree);
         case HOUSE: {
-          _draw_house(image, horizont, &world->house);
+          _draw_house(image, horizont, &world->object);
+          break;
+        }
+        case LAKE: {
+          _draw_lake(image, horizont, &world->object);
           break;
         }
         case NOT_FILLED:
@@ -242,9 +274,18 @@ static void _draw_street_light(struct Image* image, enum StreetLighStyle style,
   street_light_draw(image, style, point, height / 4, height);
 }
 
-static void _draw_house(struct Image* image, int16_t hor, struct House* house) {
+static void _draw_house(struct Image* image, int16_t hor,
+                        struct LargeObject* house) {
   struct Point3d p0 = {_x_(house->position.x), 0.0f, _y_(house->position.y)};
   struct Point3d p1 = {_x_(house->position.x + house->x_size), 0.0f,
                        _y_(house->position.y + house->y_size)};
   house_draw(image, hor, p0, p1, 40.0);
+}
+
+static void _draw_lake(struct Image* image, int16_t hor,
+                       struct LargeObject* lake) {
+  struct Point3d p0 = {_x_(lake->position.x), 0.0f, _y_(lake->position.y)};
+  struct Point3d p1 = {_x_(lake->position.x + lake->x_size), 0.0f,
+                       _y_(lake->position.y + lake->y_size)};
+  lake_draw(image, hor, p0, p1);
 }
