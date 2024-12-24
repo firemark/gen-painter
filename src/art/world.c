@@ -105,17 +105,17 @@ static void _setup_grass(struct World* world) {
 }
 
 static void _setup_large_object(struct World* world) {
-  // if (random_int(32) < 4) {
-  //   // Don't draw.
-  //   world->object.visible = false;
-  //   return;
-  // }
+  if (random_int(32) < 4) {
+    // Don't draw.
+    world->object.visible = false;
+    return;
+  }
 
   enum WorldCell cell;
   int16_t x_min_size;
   int16_t y_min_size;
   int16_t y_start;
-  switch (1 /*random_int(2)*/) {
+  switch (random_int(2)) {
     case 0: {
       x_min_size = 8;
       y_min_size = 8;
@@ -125,7 +125,7 @@ static void _setup_large_object(struct World* world) {
     }
     case 1: {
       x_min_size = 14;
-      y_min_size = 14;
+      y_min_size = 10;
       y_start = 4;
       cell = LAKE;
       break;
@@ -144,7 +144,7 @@ static void _setup_large_object(struct World* world) {
     } else {
       p.x = world->road.x - 2 - x_size;
     }
-    p.y = 4 + random_int_b(4);
+    p.y = y_start + random_int_b(4);
     if (p.x >= 0 && p.y >= 0 && p.x + x_size < GRID_SIZE_W &&
         p.y + y_size < GRID_SIZE_H) {
       break;
@@ -161,7 +161,6 @@ static void _setup_large_object(struct World* world) {
     }
   }
 
-  cell = LAKE;
   world->grid[p.y][p.x] = cell;
 }
 
@@ -276,16 +275,16 @@ static void _draw_street_light(struct Image* image, enum StreetLighStyle style,
 
 static void _draw_house(struct Image* image, int16_t hor,
                         struct LargeObject* house) {
-  struct Point3d p0 = {_x_(house->position.x), 0.0f, _y_(house->position.y)};
-  struct Point3d p1 = {_x_(house->position.x + house->x_size), 0.0f,
+  struct Point2d p0 = {_x_(house->position.x), _y_(house->position.y)};
+  struct Point2d p1 = {_x_(house->position.x + house->x_size),
                        _y_(house->position.y + house->y_size)};
   house_draw(image, hor, p0, p1, 40.0);
 }
 
 static void _draw_lake(struct Image* image, int16_t hor,
                        struct LargeObject* lake) {
-  struct Point3d p0 = {_x_(lake->position.x), 0.0f, _y_(lake->position.y)};
-  struct Point3d p1 = {_x_(lake->position.x + lake->x_size), 0.0f,
+  struct Point2d p0 = {_x_(lake->position.x), _y_(lake->position.y)};
+  struct Point2d p1 = {_x_(lake->position.x + lake->x_size),
                        _y_(lake->position.y + lake->y_size)};
   lake_draw(image, hor, p0, p1);
 }
