@@ -10,6 +10,11 @@ struct Point3d {
   float z;
 };
 
+struct Point2d {
+  float x;
+  float y;
+};
+
 static inline struct Point to_screen_from_3d(int16_t horizon,
                                              struct Point3d p3d) {
   float ratio = isinf(p3d.z) ? 0.0f : FOV / p3d.z;

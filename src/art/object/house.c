@@ -1,5 +1,6 @@
 #include "art/image/3d.h"
 #include "art/image/image_adv.h"
+#include "art/object/grass.h"
 #include "art/random.h"
 
 #include "art/_share.h"
@@ -259,34 +260,34 @@ static void _draw_triangle_grid(struct Image* image, int16_t hor, int16_t x,
   }
 }
 
-void house_draw(struct Image* image, int16_t hor, struct Point3d p0,
-                struct Point3d p1, int16_t h) {
+void house_draw(struct Image* image, int16_t hor, struct Point2d p0,
+                struct Point2d p1, int16_t h) {
   int16_t hh[] = {0, 0.8 * h, 1 * h, 3 * h, 0.6 * h};
   int16_t dxx = p1.x - p0.x;
-  int16_t dzz = p1.z - p0.z;
+  int16_t dyy = p1.y - p0.y;
   int16_t mid_x = (p0.x + p1.x) / 2.0;
-  int16_t mid_z = (p0.z + p1.z) / 2.0;
+  int16_t mid_z = (p0.y + p1.y) / 2.0;
   int16_t dx = 20;
-  int16_t dz = 0.2 * dzz;
+  int16_t dz = 0.2 * dyy;
 
-  struct Point fl0 = TO_2D(p0.x, hh[0], p0.z);
-  struct Point bl0 = TO_2D(p0.x, hh[0], p1.z);
-  struct Point fr0 = TO_2D(p1.x, hh[0], p0.z);
-  struct Point br0 = TO_2D(p1.x, hh[0], p1.z);
+  struct Point fl0 = TO_2D(p0.x, hh[0], p0.y);
+  struct Point bl0 = TO_2D(p0.x, hh[0], p1.y);
+  struct Point fr0 = TO_2D(p1.x, hh[0], p0.y);
+  struct Point br0 = TO_2D(p1.x, hh[0], p1.y);
 
-  struct Point fl1 = TO_2D(p0.x, hh[2], p0.z);
-  struct Point bl1 = TO_2D(p0.x, hh[2], p1.z);
-  struct Point fr1 = TO_2D(p1.x, hh[2], p0.z);
-  struct Point br1 = TO_2D(p1.x, hh[2], p1.z);
+  struct Point fl1 = TO_2D(p0.x, hh[2], p0.y);
+  struct Point bl1 = TO_2D(p0.x, hh[2], p1.y);
+  struct Point fr1 = TO_2D(p1.x, hh[2], p0.y);
+  struct Point br1 = TO_2D(p1.x, hh[2], p1.y);
 
-  struct Point fl1x = TO_2D(p0.x, hh[4], p0.z);
-  struct Point fr1x = TO_2D(p1.x, hh[4], p0.z);
+  struct Point fl1x = TO_2D(p0.x, hh[4], p0.y);
+  struct Point fr1x = TO_2D(p1.x, hh[4], p0.y);
 
   struct Point l2 = TO_2D(p0.x, hh[3], mid_z);
   struct Point r2 = TO_2D(p1.x, hh[3], mid_z);
 
-  int16_t fpz = p0.z - dz;
-  int16_t bpz = p1.z + dz;
+  int16_t fpz = p0.y - dz;
+  int16_t bpz = p1.y + dz;
   struct Point l2r = TO_2D(p0.x - dx, hh[3], mid_z);
   struct Point r2r = TO_2D(p1.x + dx, hh[3], mid_z);
   struct Point fl1r = TO_2D(p0.x - dx, hh[1], fpz);
@@ -309,12 +310,12 @@ void house_draw(struct Image* image, int16_t hor, struct Point3d p0,
     _draw_triangle_grid(image, hor,          //
                         p0.x,                // x
                         hh[2], hh[3],        // h
-                        p0.z, mid_z, p1.z);  // z
+                        p0.y, mid_z, p1.y);  // z
 
     _draw_triangle_grid(image, hor,          //
                         p1.x,                // x
                         hh[2], hh[3],        // h
-                        p0.z, mid_z, p1.z);  // z
+                        p0.y, mid_z, p1.y);  // z
   }
 
   {  // Sides
@@ -324,15 +325,21 @@ void house_draw(struct Image* image, int16_t hor, struct Point3d p0,
     _draw_grid_v(image, hor,    //
                  p0.x, p0.x,    // x
                  hh[0], hh[2],  // h
-                 p0.z, p1.z);   // z
+                 p0.y, p1.y);   // z
 
     _draw_grid_v(image, hor,    //
                  p1.x, p1.x,    // x
                  hh[0], hh[2],  // h
-                 p1.z, p0.z);   // z
+                 p1.y, p0.y);   // z
 
     _draw_door_v(image, hor, p0.x, h, mid_z);
     _draw_door_v(image, hor, p1.x, h, mid_z);
+  }
+
+  { // Grass on sides
+    int16_t count = abs(fl0.x - bl0.x) / 2;
+    grass_draw_vec(image, &fr0, &br0, count, 2);
+    grass_draw_vec(image, &fl0, &bl0, count, 2);
   }
 
   {  // Front
@@ -342,12 +349,17 @@ void house_draw(struct Image* image, int16_t hor, struct Point3d p0,
     _draw_grid_h(image, hor,    //
                  p0.x, p1.x,    // x
                  hh[0], hh[2],  // h
-                 p0.z, p0.z);   // z
+                 p0.y, p0.y);   // z
 
     int16_t xx0 = p0.x + 0.25 * dxx;
     int16_t xx1 = p0.x + 0.75 * dxx;
-    _draw_window_h(image, hor, xx0, 0.5 * h, p0.z);
-    _draw_window_h(image, hor, xx1, 0.5 * h, p0.z);
+    _draw_window_h(image, hor, xx0, 0.5 * h, p0.y);
+    _draw_window_h(image, hor, xx1, 0.5 * h, p0.y);
+  }
+
+  { // Grass on front
+    int16_t count = abs(fr0.x - fl0.x) / 2;
+    grass_draw_vec(image, &fr0, &fl0, count, 2);
   }
 
   {  // Front roof
