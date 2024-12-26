@@ -7,7 +7,7 @@
 #define GRID_SIZE_H 20
 #define GRID_SIZE_W 50
 
-enum WorldCell { NOT_FILLED, EMPTY, GRASS, ROAD, TREE, HOUSE, LAKE };
+enum WorldCell { NOT_FILLED, EMPTY, GRASS, ROAD, TREE, HOUSE, LAKE, ROCK };
 
 struct LargeObject {
     bool visible;

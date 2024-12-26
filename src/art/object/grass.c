@@ -1,9 +1,6 @@
 #include "art/object/grass.h"
 #include "art/random.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "art/_share.h"
 
 static inline void _draw_blade(struct Image* image, struct Point* p,

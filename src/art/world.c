@@ -5,6 +5,7 @@
 #include "art/object/house.h"
 #include "art/object/lake.h"
 #include "art/object/road.h"
+#include "art/object/rock.h"
 #include "art/object/street_light.h"
 #include "art/object/tree.h"
 #include "art/random.h"
@@ -99,7 +100,16 @@ static void _setup_grass(struct World* world) {
         continue;
       }
 
-      *cell = random_int(32) > 14 ? EMPTY : GRASS;
+      switch (random_int(32)) {
+        case 0 ... 14:
+          *cell = GRASS;
+          break;
+        case 15:
+          *cell = ROCK;
+          break;
+        default:
+          *cell = EMPTY;
+      }
     }
   }
 }
@@ -167,6 +177,7 @@ static void _setup_large_object(struct World* world) {
 static void _draw_tree(struct Image* image, int16_t hor, int16_t x, int16_t y);
 static void _draw_grass(struct Image* image, int16_t hor, int16_t x, int16_t y);
 static void _draw_road(struct Image* image, int16_t hor, struct Road* road);
+static void _draw_rock(struct Image* image, int16_t hor, int16_t x, int16_t y);
 static void _draw_street_light(struct Image* image, enum StreetLighStyle style,
                                int16_t hor, int16_t x, int16_t y);
 static void _draw_house(struct Image* image, int16_t hor,
@@ -206,6 +217,8 @@ void world_draw_front(struct Image* image, struct World* world,
           INVOKE_CB(_draw_grass);
         case TREE:
           INVOKE_CB(_draw_tree);
+        case ROCK:
+          INVOKE_CB(_draw_rock);
         case HOUSE: {
           _draw_house(image, horizont, &world->object);
           break;
@@ -255,6 +268,13 @@ static void _draw_grass(struct Image* image, int16_t hor, int16_t x,
   float size_factor = 100 + random_int(100);
   float size = _g_(size_factor) / position_a.z;
   grass_draw(image, point_a.x, point_b.x, point_a.y, size);
+}
+
+static void _draw_rock(struct Image* image, int16_t hor, int16_t x, int16_t y) {
+
+  struct Point point = {_x_(x), _y_(y)};
+  float size_factor = 5 + random_int(5);
+  rock_draw(image, &point, size_factor, size_factor / 2, hor);
 }
 
 static void _draw_road(struct Image* image, int16_t hor, struct Road* road) {
