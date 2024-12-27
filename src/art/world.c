@@ -100,7 +100,7 @@ static void _setup_grass(struct World* world) {
         continue;
       }
 
-      switch (random_int(32)) {
+      switch (random_int(24)) {
         case 0 ... 14:
           *cell = GRASS;
           break;
@@ -274,7 +274,8 @@ static void _draw_rock(struct Image* image, int16_t hor, int16_t x, int16_t y) {
 
   struct Point point = {_x_(x), _y_(y)};
   float size_factor = 5 + random_int(5);
-  rock_draw(image, &point, size_factor, size_factor / 2, hor);
+  float height = 2 + random_int(3);
+  rock_draw(image, &point, size_factor, height, hor);
 }
 
 static void _draw_road(struct Image* image, int16_t hor, struct Road* road) {
