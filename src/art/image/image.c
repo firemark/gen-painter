@@ -308,7 +308,6 @@ void image_draw_hline(struct Image* image, int16_t y, int16_t x0, int16_t x1,
     x0 = x1;
     x1 = z;
   }
-  uint16_t yy = y * y;
 
   CLIP(x0, x1, IMAGE_WIDTH - 1);
   for (x = x0; x <= x1; x++) {
@@ -326,7 +325,6 @@ void image_draw_hline_mirror(struct Image* image, int16_t y, int16_t x0,
     x0 = x1;
     x1 = z;
   }
-  uint16_t yy = y * y;
 
   CLIP(x0, x1, IMAGE_WIDTH - 1);
   int dy = horizont - y;

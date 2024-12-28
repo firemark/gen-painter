@@ -24,11 +24,6 @@ void street_light_draw(struct Image* image, enum StreetLighStyle style,
       .color = line_stick.color,
   };
 
-  struct Line line_head = {
-      .thickness = line_stick.thickness / 8,
-      .color = line_stick.color,
-  };
-
   int16_t sb = height / 3;
   int16_t hb = head_height / 3;
   int16_t hd = head_height / 5;

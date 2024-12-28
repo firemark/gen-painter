@@ -83,8 +83,6 @@ static inline void _polyfill(struct Image* image, struct Point* points,
     struct Point* a = &points[i];
     struct Point* b = &points[i < size - 1 ? i + 1 : 0];
     struct Edge* edge = &edges[i];
-    int16_t y_max;
-    int16_t y_min;
 
     if (a->y < b->y) {
       // Swap
@@ -172,14 +170,15 @@ static inline void _polyfill(struct Image* image, struct Point* points,
 }
 
 static inline void _polyfill_basic_cb(struct Image* image, int y, int xa,
-                                      int xb, struct BasicPolyfill* data) {
-  image_draw_hline(image, y, xa, xb, data->color, data->threshold,
-                   data->bg_color);
+                                      int xb, void* data) {
+  struct BasicPolyfill* data_p = data;
+  image_draw_hline(image, y, xa, xb, data_p->color, data_p->threshold,
+                   data_p->bg_color);
 }
 
 static inline void _polyfill_mirror(struct Image* image, int y, int xa, int xb,
-                                    int* horizont) {
-  image_draw_hline_mirror(image, y, xa, xb, *horizont);
+                                    void* horizont) {
+  image_draw_hline_mirror(image, y, xa, xb, *(int*)horizont);
 }
 
 void polyfill(struct Image* image, struct Point* points, uint8_t size,

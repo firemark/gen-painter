@@ -91,6 +91,8 @@ void core(SDL_Surface *screen_surface) {
 }
 
 int main(int argc, char *args[]) {
+  (void)argc;
+  (void)args;
   art_init();
   srand(time(NULL));
   SDL_Window *window = NULL;

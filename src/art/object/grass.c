@@ -26,7 +26,6 @@ static inline void _draw_blade(struct Image* image, struct Point* p,
 void grass_draw(struct Image* image, int16_t xa, int16_t xb, int16_t y,
                 int16_t tall) {
   struct Point p = {xa, y};
-  int16_t x = xa;
   while (p.x < xb) {
     p.x += 4 + random_int_b(3);
     p.y = y + random_int_b(16);

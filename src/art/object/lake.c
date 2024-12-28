@@ -1,8 +1,10 @@
 #include "art/object/lake.h"
 
+#include <stdlib.h>
 #include <math.h>
 
 #include "art/image/image_adv.h"
+#include "art/object/grass.h"
 #include "art/random.h"
 
 #include "art/_share.h"

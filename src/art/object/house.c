@@ -1,4 +1,7 @@
 #include "art/image/3d.h"
+
+#include <stdlib.h>
+
 #include "art/image/image_adv.h"
 #include "art/object/grass.h"
 #include "art/random.h"
@@ -76,7 +79,6 @@ static void _draw_grid_roof(struct Image* image, int16_t hor, int16_t x0,
 static void _draw_grid_h(struct Image* image, int16_t hor, int16_t x0,
                          int16_t x1, int16_t h0, int16_t h1, int16_t z0,
                          int16_t z1) {
-  const int16_t dx = x1 - x0;
   const int16_t dz = z1 - z0;
   const int16_t dh = h1 - h0;
   const double r = 0.125;
@@ -106,7 +108,6 @@ static void _draw_grid_v(struct Image* image, int16_t hor, int16_t x0,
                          int16_t x1, int16_t h0, int16_t h1, int16_t z0,
                          int16_t z1) {
   const int16_t dx = x1 - x0;
-  const int16_t dz = z1 - z0;
   const int16_t dh = h1 - h0;
   const double r = 0.125;
 
@@ -265,7 +266,6 @@ void house_draw(struct Image* image, int16_t hor, struct Point2d p0,
   int16_t hh[] = {0, 0.8 * h, 1 * h, 3 * h, 0.6 * h};
   int16_t dxx = p1.x - p0.x;
   int16_t dyy = p1.y - p0.y;
-  int16_t mid_x = (p0.x + p1.x) / 2.0;
   int16_t mid_z = (p0.y + p1.y) / 2.0;
   int16_t dx = 20;
   int16_t dz = 0.2 * dyy;

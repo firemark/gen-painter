@@ -27,6 +27,7 @@ static void _draw_background_cloud(struct Image* image, struct Cloud* cloud,
 
 uint8_t clouds_init(void) {
   _bg_color = _background_color == WHITE ? BLACK : _background_color;
+  return 1;
 }
 
 void clouds_draw(struct Image* image) {
@@ -45,7 +46,7 @@ void clouds_draw(struct Image* image) {
 }
 
 static void _draw_background_cloud_bar(struct Image* image, int16_t x_start,
-                                       int16_t x_end, int16_t y, uint8_t width,
+                                       int16_t x_end, int16_t y,
                                        uint8_t size, uint8_t threshold) {
   int16_t x = x_start;
   while (x < x_end) {
@@ -102,7 +103,7 @@ static void _draw_background_cloud(struct Image* image, struct Cloud* cloud,
       int16_t y = cloud->point.y - i * mult;
       int16_t x_start = cloud->point.x + span * i * mult;
       int16_t x_end = cloud->point.x + (cloud->width - span * i) * mult;
-      _draw_background_cloud_bar(image, x_start, x_end, y, 16, 12,
+      _draw_background_cloud_bar(image, x_start, x_end, y, 16,
                                  128 - random_int(16));
     }
   } else {

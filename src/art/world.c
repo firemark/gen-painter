@@ -279,8 +279,6 @@ static void _draw_rock(struct Image* image, int16_t hor, int16_t x, int16_t y) {
 }
 
 static void _draw_road(struct Image* image, int16_t hor, struct Road* road) {
-  float x = _x_(road->x);
-  float w = _g_(road->width);
   road_draw(image, hor, _x_(road->x), _g_(road->width));
 }
 

@@ -37,11 +37,6 @@ static inline struct Point3d compute_normal_from_triangle(
       .y = u.z * v.x - u.x * v.z,
       .z = u.x * v.y - u.y * v.x,
   };
-  struct Point3d absn = {
-      .x = fabs(n.x),
-      .y = fabs(n.y),
-      .z = fabs(n.z),
-  };
   float max_abs = n.x;
   if (max_abs < n.y) {
     max_abs = n.y;

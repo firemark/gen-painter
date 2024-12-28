@@ -10,7 +10,6 @@ void road_draw(struct Image* image, int16_t horizon, float xa, float width) {
   float y = 0.0f;
   float z_start = FOV * 4;
   float z_end = INFINITY;
-  float z_lane_end = FOV * 100;
   enum Color color = _branches_color;
 
   struct Point a_start = TO_3D(xa, y, z_start);

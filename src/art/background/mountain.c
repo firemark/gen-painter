@@ -99,11 +99,11 @@ static struct MountainPointTree* _create_mountain(int16_t width,
 
 static void _free_mountain(struct MountainPointTree* tree) {
   while (tree) {
-    struct MountainPointPath* path = &tree->path;
+    struct MountainPointPath* path = tree->path.down;
     while (path) {
       struct MountainPointPath* prev = path;
       path = path->down;
-      free(path);
+      free(prev);
     }
     struct MountainPointTree* prev = tree;
     tree = tree->right;
