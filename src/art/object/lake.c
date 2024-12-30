@@ -36,7 +36,7 @@ void lake_draw(struct Image* image, int16_t hor, struct Point2d p0,
     struct Point *a = &points[i];
     struct Point *b = &points[(i + 1) % POINTS_COUNT];
     int16_t count = (abs(a->x - b->x) + abs(a->y - b->y));
-    grass_draw_vec(image, a, b, count / 5, 8);
-    grass_draw_vec(image, a, b, count / 2, 3);
+    grass_draw_vec(image, a, b, count / 5, 4);
+    grass_draw_vec(image, a, b, count / 2, 2);
   }
 }

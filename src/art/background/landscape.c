@@ -31,11 +31,13 @@ void landscape_draw(struct Image* image) {
 static void _draw_mountains(struct Image* image) {
   int16_t mountain_height = 300 + random_int(200);
   int16_t mountain_width = 1000 + random_int(400);
-  int16_t x_center = IMAGE_WIDTH / 2 + random_int(100) - 200;
+  int16_t x_center = IMAGE_WIDTH / 2 + random_int_b(200);
   if (random_int(32) > 24) {
-    draw_mountain(image, x_center + random_int(100) - 300, _y, mountain_width,
+    int16_t dir = random_int(4) > 2 ? -1 : 1;
+    int16_t shift = mountain_width / 4 + random_int(100);
+    draw_mountain(image, x_center + random_int(100) - dir * shift, _y, mountain_width,
                   mountain_height);
-    draw_mountain(image, x_center - random_int(100) + 300, _y,
+    draw_mountain(image, x_center - random_int(100) + dir * shift, _y,
                   mountain_width / 2, mountain_height / 2);
   } else {
     draw_mountain(image, x_center, _y, mountain_width, mountain_height);
