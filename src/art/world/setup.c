@@ -145,6 +145,12 @@ static void _setup_large_object(struct World* world) {
       cell = LAKE;
       break;
     }
+    default: {
+      x_min_size = 1;
+      y_min_size = 1;
+      y_start = 4;
+      cell = EMPTY;
+    }
   }
 
   int16_t x_size;

@@ -151,8 +151,8 @@ static inline void _polyfill(struct Image* image, struct Point* points,
     }
 
     // Fill line
-    int16_t xa;
-    int16_t xb;
+    int16_t xa = active_edges[0]->x;
+    int16_t xb = active_edges[1]->x;
     for (i = 0; i < active_edges_count; i++) {
       struct Edge* edge = active_edges[i];
       if (i % 2 == 0) {
