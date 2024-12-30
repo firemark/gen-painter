@@ -161,7 +161,7 @@ static void _setup_large_object(struct World* world) {
   for (tries_count = 50; tries_count > 0; tries_count--) {
     y_size = y_min_size + random_int_b(2);
     x_size = x_min_size + random_int_b(2);
-    if (i++ % 2) {  //
+    if (i++ % 2) {
       // Right side
       if (world->has_right_sea) {
         continue;

@@ -1,48 +1,7 @@
-#include "art/image/image_adv.h"
+#include "art/image/polyfill.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-struct Point bezier(float t, struct Point b[4]) {
-  struct Point p;
-  float t_inv = 1 - t;
-  float tt = t * t;
-  float ttt = tt * t;
-  float tt_inv = t_inv * t_inv;
-  float ttt_inv = tt_inv * t_inv;
-  float t_tt_inv = t * tt_inv;
-  float tt_t_inv = tt * t_inv;
-
-  p.x = b[0].x * ttt_inv + 3 * b[1].x * t_tt_inv + 3 * b[2].x * tt_t_inv +
-        b[3].x * ttt;
-  p.y = b[0].y * ttt_inv + 3 * b[1].y * t_tt_inv + 3 * b[2].y * tt_t_inv +
-        b[3].y * ttt;
-
-  return p;
-}
-
-void polygon_border(struct Image* image, struct Point* points, uint8_t size,
-                    enum Color color, uint8_t thickness) {
-  struct Line line = {
-      .color = color,
-      .thickness = thickness,
-  };
-
-  if (size < 2) {
-    return;
-  }
-
-  for (uint8_t i = 0; i < size - 1; i++) {
-    line.p0 = points[i];
-    line.p1 = points[i + 1];
-    image_draw_line(image, &line);
-  }
-
-  line.p0 = points[size - 1];
-  line.p1 = points[0];
-  image_draw_line(image, &line);
-}
 
 struct Edge {
   int16_t y_max;
@@ -176,7 +135,7 @@ static inline void _polyfill_basic_cb(struct Image* image, int y, int xa,
                    data_p->bg_color);
 }
 
-static inline void _polyfill_mirror(struct Image* image, int y, int xa, int xb,
+static inline void _polyfill_mirror_cb(struct Image* image, int y, int xa, int xb,
                                     void* horizont) {
   image_draw_hline_mirror(image, y, xa, xb, *(int*)horizont);
 }
@@ -193,5 +152,5 @@ void polyfill(struct Image* image, struct Point* points, uint8_t size,
 
 void polyfill_mirror(struct Image* image, struct Point* points, uint8_t size,
                      int horizont) {
-  _polyfill(image, points, size, &horizont, _polyfill_mirror);
+  _polyfill(image, points, size, &horizont, _polyfill_mirror_cb);
 }

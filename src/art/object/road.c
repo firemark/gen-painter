@@ -1,7 +1,9 @@
 #include "art/object/road.h"
-#include "art/_share.h"
+
 #include "art/image/3d.h"
-#include "art/image/image_adv.h"
+#include "art/image/polyfill.h"
+
+#include "art/_share.h"
 
 #define TO_3D(x, y, z) to_screen_from_3d(horizon, (struct Point3d){x, y, z})
 

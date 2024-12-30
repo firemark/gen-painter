@@ -1,7 +1,7 @@
 #include "art/world.h"
 #include "art/_share.h"
 #include "art/image/3d.h"
-#include "art/image/image_adv.h"
+#include "art/image/polyfill.h"
 #include "art/object/grass.h"
 #include "art/object/house.h"
 #include "art/object/lake.h"

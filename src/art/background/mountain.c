@@ -1,14 +1,15 @@
 #include "art/background/mountain.h"
+
+#include <stdlib.h>
+#include <stdbool.h>
+
 #include "art/image/3d.h"
-#include "art/image/image_adv.h"
+#include "art/image/bezier.h"
+#include "art/image/polyfill.h"
 #include "art/random.h"
-#include "art/random_point.h"
 
 #include "art/_share.h"
 
-#include <math.h>
-#include <stdbool.h>
-#include <stdlib.h>
 
 #define WIDTH 100
 

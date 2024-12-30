@@ -1,10 +1,11 @@
 #include "art/object/tree.h"
-#include "art/image/image_adv.h"
-#include "art/random.h"
 
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
+
+#include "art/image/bezier.h"
+#include "art/image/lerp.h"
+#include "art/random.h"
 
 #include "art/_share.h"
 

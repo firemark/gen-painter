@@ -3,8 +3,9 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "art/image/polyfill.h"
+#include "art/image/border.h"
 #include "art/image/3d.h"
-#include "art/image/image_adv.h"
 #include "art/random.h"
 
 #include "art/_share.h"

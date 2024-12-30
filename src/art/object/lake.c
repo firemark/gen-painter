@@ -1,9 +1,9 @@
 #include "art/object/lake.h"
 
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
 
-#include "art/image/image_adv.h"
+#include "art/image/polyfill.h"
 #include "art/object/grass.h"
 #include "art/random.h"
 

@@ -1,10 +1,6 @@
 #include "art/background/landscape_fog.h"
-#include "art/image/image_adv.h"
 
 #include "art/_share.h"
-
-#include <stdbool.h>
-#include <stdlib.h>
 
 static const int16_t HEIGHT_UP = 2;
 static const int16_t HEIGHT_DOWN = 4;

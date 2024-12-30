@@ -1,8 +1,11 @@
 #include "art/object/street_light.h"
-#include "art/_share.h"
-#include "art/image/image_adv.h"
 
 #include <math.h>
+
+#include "art/image/polyfill.h"
+
+#include "art/_share.h"
+
 
 static void _draw_classic(struct Image* image, struct Point head,
                           struct Line line_stick, int16_t head_height);
