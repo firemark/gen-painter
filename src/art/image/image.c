@@ -1,6 +1,7 @@
 #include "art/image/image.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
 #include "art/random.h"
 
 #define TO_FIXED_POINT(x) ((x) << 16)
@@ -328,9 +329,10 @@ void image_draw_hline_mirror(struct Image* image, int16_t y, int16_t x0,
 
   CLIP(x0, x1, IMAGE_WIDTH - 1);
   int dy = horizont - y;
+  int16_t dx = (12 + random_int_b(4)) * sin((float)y * 0.5f) + random_int_b(2);
   int mirror_y = horizont + dy;
   for (x = x0; x <= x1; x++) {
-    enum Color color = _image_get_pixel(image, x + random_int_b(4), mirror_y);
+    enum Color color = _image_get_pixel(image, x + dx, mirror_y);
     _image_set_pixel(image, color, x, y);
   }
 }

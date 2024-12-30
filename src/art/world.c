@@ -1,6 +1,7 @@
 #include "art/world.h"
 #include "art/_share.h"
 #include "art/image/3d.h"
+#include "art/image/image_adv.h"
 #include "art/object/grass.h"
 #include "art/object/house.h"
 #include "art/object/lake.h"
@@ -25,6 +26,7 @@ void world_reset(void) {
 
 static void _setup_init(struct World* world);
 static void _setup_road(struct World* world);
+static void _setup_sea(struct World* world);
 static void _setup_trees(struct World* world);
 static void _setup_grass(struct World* world);
 static void _setup_large_object(struct World* world);
@@ -32,6 +34,7 @@ static void _setup_large_object(struct World* world);
 void world_setup(struct World* world) {
   _setup_init(world);
   _setup_road(world);
+  _setup_sea(world);
   _setup_large_object(world);
   _setup_trees(world);
   _setup_grass(world);
@@ -62,6 +65,28 @@ static void _setup_road(struct World* world) {
   }
 }
 
+static void _setup_sea(struct World* world) {
+  world->has_left_sea = random_int(24) > 20;
+  world->has_right_sea = random_int(24) > 20;
+
+  if (world->has_left_sea) {
+    int x, y;
+    for (x = 0; x < world->road.x; x++) {
+      for (y = 0; y < GRID_SIZE_H; y++) {
+        world->grid[y][x] = EMPTY;
+      }
+    }
+  }
+  if (world->has_right_sea) {
+    int x, y;
+    for (x = world->road.x; x < GRID_SIZE_W; x++) {
+      for (y = 0; y < GRID_SIZE_H; y++) {
+        world->grid[y][x] = EMPTY;
+      }
+    }
+  }
+}
+
 static void _setup_trees(struct World* world) {
   _tree_config.tree = (struct Tree){
       .main_branch_ratio = random_range(600, 900),
@@ -77,7 +102,9 @@ static void _setup_trees(struct World* world) {
 
   uint8_t x, y;
   uint8_t tree_count = _tree_config.count;
-  while (tree_count > 0) {
+  uint8_t tries_count = 50;
+  while (tree_count > 0 && tries_count > 0) {
+    tries_count--;
     // TODO poisson point process.
     x = GRID_SIZE_W / 4 + random_int(GRID_SIZE_W / 2);
     y = 3 + random_int(GRID_SIZE_H / 2);
@@ -146,12 +173,21 @@ static void _setup_large_object(struct World* world) {
   int16_t y_size;
   struct Point p;
   uint8_t i = random_int(2);
-  for (;;) {
+  uint8_t tries_count;
+  for (tries_count = 50; tries_count > 0; tries_count--) {
     y_size = y_min_size + random_int_b(2);
     x_size = x_min_size + random_int_b(2);
-    if (i++ % 2) {
+    if (i++ % 2) { //
+      // Right side
+      if (world->has_right_sea) {
+        continue;
+      }
       p.x = world->road.x + world->road.width + 2;
     } else {
+      // Left side
+      if (world->has_left_sea) {
+        continue;
+      }
       p.x = world->road.x - 2 - x_size;
     }
     p.y = y_start + random_int_b(4);
@@ -159,6 +195,12 @@ static void _setup_large_object(struct World* world) {
         p.y + y_size < GRID_SIZE_H) {
       break;
     }
+  }
+
+  if (tries_count == 0) {
+    // Fail to find place.
+    world->object.visible = false;
+    return;
   }
 
   world->object.position = p;
@@ -176,6 +218,7 @@ static void _setup_large_object(struct World* world) {
 
 static void _draw_tree(struct Image* image, int16_t hor, int16_t x, int16_t y);
 static void _draw_grass(struct Image* image, int16_t hor, int16_t x, int16_t y);
+static void _draw_sea(struct Image* image, int16_t hor, float x_road, int16_t x_border);
 static void _draw_road(struct Image* image, int16_t hor, struct Road* road);
 static void _draw_rock(struct Image* image, int16_t hor, int16_t x, int16_t y);
 static void _draw_street_light(struct Image* image, enum StreetLighStyle style,
@@ -191,8 +234,24 @@ static void _draw_lake(struct Image* image, int16_t hor,
     break;                     \
   }
 
+static inline float _g_(float x) {
+  return x * GRID_CELL_SIZE;
+}
+static inline float _x_(float x) {
+  return _g_(x - GRID_SIZE_W / 2);
+}
+static inline float _y_(float y) {
+  return FOV * 5 + _g_(y) * 8;
+}
+
 void world_draw_back(struct Image* image, struct World* world,
                      int16_t horizont) {
+  if (world->has_left_sea) {
+    _draw_sea(image, horizont, world->road.x - 0.5f, 0);
+  }
+  if (world->has_right_sea) {
+    _draw_sea(image, horizont, world->road.x + world->road.width + 0.5f, IMAGE_WIDTH);
+  }
   _draw_road(image, horizont, &world->road);
 }
 
@@ -236,16 +295,6 @@ void world_draw_front(struct Image* image, struct World* world,
   }
 }
 
-static inline float _g_(float x) {
-  return x * GRID_CELL_SIZE;
-}
-static inline float _x_(float x) {
-  return _g_(x - GRID_SIZE_W / 2);
-}
-static inline float _y_(float y) {
-  return FOV * 5 + _g_(y) * 8;
-}
-
 static void _draw_tree(struct Image* image, int16_t hor, int16_t x, int16_t y) {
   struct Point3d position = {_x_(x), 0.0f, _y_(y)};
   struct Point point = to_screen_from_3d(hor, position);
@@ -276,6 +325,35 @@ static void _draw_rock(struct Image* image, int16_t hor, int16_t x, int16_t y) {
   float size_factor = 5 + random_int(5);
   float height = 2 + random_int(3);
   rock_draw(image, &point, size_factor, height, hor);
+}
+
+static void _draw_sea(struct Image* image, int16_t hor, float x_road, int16_t x_border) {
+  float x = _x_(x_road);
+  float z[2] = {INFINITY, FOV * 4};
+  float y[3] = {-4, -2, 0};
+  struct Point a[3];
+  struct Point b[3];
+  int i;
+  for (i=0; i < 3; i++) {
+    a[i] = to_screen_from_3d(hor, (struct Point3d){x, y[i], z[0]});
+    b[i] = to_screen_from_3d(hor, (struct Point3d){x, y[i], z[1]});
+  }
+  struct Point points[4] = {
+      {x_border, a[0].y},
+      {x_border, b[0].y},
+      b[0],
+      a[0],
+  };
+  polyfill_mirror(image, points, 4, hor);
+  for (i=0; i < 3; i++) { // draw stairs;
+    struct Line line = {
+      .p0=a[i],
+      .p1=b[i],
+      .color=_branches_color,
+      .thickness=2,
+    };
+    image_draw_line(image, &line);
+  }
 }
 
 static void _draw_road(struct Image* image, int16_t hor, struct Road* road) {

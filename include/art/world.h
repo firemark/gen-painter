@@ -20,6 +20,8 @@ struct World {
   enum WorldCell grid[GRID_SIZE_H][GRID_SIZE_W];
   bool has_right_light;
   bool has_left_light;
+  bool has_left_sea;
+  bool has_right_sea;
   enum StreetLighStyle street_light_style;
   struct LargeObject object;
   struct Road {
