@@ -34,6 +34,8 @@
 ******************************************************************************/
 #include "esp32/epd.h"
 
+#include <stdio.h>
+
 #include <rom/ets_sys.h>
 
 #include "driver/gpio.h"
@@ -72,10 +74,10 @@ uint8_t EPD_12in48B_Init(void) {
   gpio_config_t output_config = {
       .intr_type = GPIO_INTR_DISABLE,
       .mode = GPIO_MODE_OUTPUT,
-      .pin_bit_mask = _DC(EPD_SCK_PIN) | _DC(EPD_MOSI_PIN) |        //
-                      _DC(EPD_M1_CS_PIN) | _DC(EPD_S1_CS_PIN) |     //
-                      _DC(EPD_M2_CS_PIN) | _DC(EPD_S2_CS_PIN) |     //
-                      _DC(EPD_M1S1_DC_PIN) | _DC(EPD_M2S2_DC_PIN) | //
+      .pin_bit_mask = _DC(EPD_SCK_PIN) | _DC(EPD_MOSI_PIN) |         //
+                      _DC(EPD_M1_CS_PIN) | _DC(EPD_S1_CS_PIN) |      //
+                      _DC(EPD_M2_CS_PIN) | _DC(EPD_S2_CS_PIN) |      //
+                      _DC(EPD_M1S1_DC_PIN) | _DC(EPD_M2S2_DC_PIN) |  //
                       _DC(EPD_M1S1_RST_PIN) | _DC(EPD_M2S2_RST_PIN),
       .pull_down_en = 0,
       .pull_up_en = 0,
@@ -83,11 +85,8 @@ uint8_t EPD_12in48B_Init(void) {
   gpio_config_t input_config = {
       .intr_type = GPIO_INTR_DISABLE,
       .mode = GPIO_MODE_INPUT,
-      .pin_bit_mask = _DC(EPD_SCK_PIN) | _DC(EPD_MOSI_PIN) |        //
-                      _DC(EPD_M1_CS_PIN) | _DC(EPD_S1_CS_PIN) |     //
-                      _DC(EPD_M2_CS_PIN) | _DC(EPD_S2_CS_PIN) |     //
-                      _DC(EPD_M1S1_DC_PIN) | _DC(EPD_M2S2_DC_PIN) | //
-                      _DC(EPD_M1S1_RST_PIN) | _DC(EPD_M2S2_RST_PIN),
+      .pin_bit_mask = _DC(EPD_M1_BUSY_PIN) | _DC(EPD_S1_BUSY_PIN) |  //
+                      _DC(EPD_M2_BUSY_PIN) | _DC(EPD_S2_BUSY_PIN),   //
       .pull_down_en = 0,
       .pull_up_en = 1,
   };
@@ -111,7 +110,7 @@ uint8_t EPD_12in48B_Init(void) {
 #if EPD_VERSION == 1
   // panel setting
   EPD_M1_SendCommand(0x00);
-  EPD_M1_SendData(0x2f); // KW-3f   KWR-2F	BWROTP 0f	BWOTP 1f
+  EPD_M1_SendData(0x2f);  // KW-3f   KWR-2F	BWROTP 0f	BWOTP 1f
   EPD_S1_SendCommand(0x00);
   EPD_S1_SendData(0x2f);
   EPD_M2_SendCommand(0x00);
@@ -122,22 +121,22 @@ uint8_t EPD_12in48B_Init(void) {
   // POWER SETTING
   EPD_M1_SendCommand(0x01);
   EPD_M1_SendData(0x07);
-  EPD_M1_SendData(0x17); // VGH=20V,VGL=-20V
-  EPD_M1_SendData(0x3F); // VDH=15V
-  EPD_M1_SendData(0x3F); // VDL=-15V
+  EPD_M1_SendData(0x17);  // VGH=20V,VGL=-20V
+  EPD_M1_SendData(0x3F);  // VDH=15V
+  EPD_M1_SendData(0x3F);  // VDL=-15V
   EPD_M1_SendData(0x0d);
   EPD_M2_SendCommand(0x01);
   EPD_M2_SendData(0x07);
-  EPD_M2_SendData(0x17); // VGH=20V,VGL=-20V
-  EPD_M2_SendData(0x3F); // VDH=15V
-  EPD_M2_SendData(0x3F); // VDL=-15V
+  EPD_M2_SendData(0x17);  // VGH=20V,VGL=-20V
+  EPD_M2_SendData(0x3F);  // VDH=15V
+  EPD_M2_SendData(0x3F);  // VDL=-15V
   EPD_M2_SendData(0x0d);
 
   // booster soft start
   EPD_M1_SendCommand(0x06);
-  EPD_M1_SendData(0x17); // A
-  EPD_M1_SendData(0x17); // B
-  EPD_M1_SendData(0x39); // C
+  EPD_M1_SendData(0x17);  // A
+  EPD_M1_SendData(0x17);  // B
+  EPD_M1_SendData(0x39);  // C
   EPD_M1_SendData(0x17);
   EPD_M2_SendCommand(0x06);
   EPD_M2_SendData(0x17);
@@ -148,41 +147,41 @@ uint8_t EPD_12in48B_Init(void) {
   // resolution setting
   EPD_M1_SendCommand(0x61);
   EPD_M1_SendData(0x02);
-  EPD_M1_SendData(0x88); // source 648
-  EPD_M1_SendData(0x01); // gate 492
+  EPD_M1_SendData(0x88);  // source 648
+  EPD_M1_SendData(0x01);  // gate 492
   EPD_M1_SendData(0xEC);
   EPD_S1_SendCommand(0x61);
   EPD_S1_SendData(0x02);
-  EPD_S1_SendData(0x90); // source 656
-  EPD_S1_SendData(0x01); // gate 492
+  EPD_S1_SendData(0x90);  // source 656
+  EPD_S1_SendData(0x01);  // gate 492
   EPD_S1_SendData(0xEC);
   EPD_M2_SendCommand(0x61);
   EPD_M2_SendData(0x02);
-  EPD_M2_SendData(0x90); // source 656
-  EPD_M2_SendData(0x01); // gate 492
+  EPD_M2_SendData(0x90);  // source 656
+  EPD_M2_SendData(0x01);  // gate 492
   EPD_M2_SendData(0xEC);
   EPD_S2_SendCommand(0x61);
   EPD_S2_SendData(0x02);
-  EPD_S2_SendData(0x88); // source 648
-  EPD_S2_SendData(0x01); // gate 492
+  EPD_S2_SendData(0x88);  // source 648
+  EPD_S2_SendData(0x01);  // gate 492
   EPD_S2_SendData(0xEC);
 
-  EPD_M1S1M2S2_SendCommand(0x15); // DUSPI
+  EPD_M1S1M2S2_SendCommand(0x15);  // DUSPI
   EPD_M1S1M2S2_SendData(0x20);
 
-  EPD_M1S1M2S2_SendCommand(0x30); // PLL
+  EPD_M1S1M2S2_SendCommand(0x30);  // PLL
   EPD_M1S1M2S2_SendData(0x08);
 
-  EPD_M1S1M2S2_SendCommand(0x50); // Vcom and data interval setting
+  EPD_M1S1M2S2_SendCommand(0x50);  // Vcom and data interval setting
   EPD_M1S1M2S2_SendData(0x31);
   EPD_M1S1M2S2_SendData(0x07);
 
-  EPD_M1S1M2S2_SendCommand(0x60); // TCON
+  EPD_M1S1M2S2_SendCommand(0x60);  // TCON
   EPD_M1S1M2S2_SendData(0x22);
 
-  EPD_M1_SendCommand(0xE0); // POWER SETTING
+  EPD_M1_SendCommand(0xE0);  // POWER SETTING
   EPD_M1_SendData(0x01);
-  EPD_M2_SendCommand(0xE0); // POWER SETTING
+  EPD_M2_SendCommand(0xE0);  // POWER SETTING
   EPD_M2_SendData(0x01);
 
   EPD_M1S1M2S2_SendCommand(0xE3);
@@ -208,7 +207,7 @@ uint8_t EPD_12in48B_Init(void) {
 
   // panel setting for Display
   EPD_M1_SendCommand(0x00);
-  EPD_M1_SendData(0x0f); // KW-3f   KWR-2F	BWROTP 0f	BWOTP 1f
+  EPD_M1_SendData(0x0f);  // KW-3f   KWR-2F	BWROTP 0f	BWOTP 1f
   EPD_S1_SendCommand(0x00);
   EPD_S1_SendData(0x0f);
   EPD_M2_SendCommand(0x00);
@@ -218,9 +217,9 @@ uint8_t EPD_12in48B_Init(void) {
 
   // booster soft start
   EPD_M1_SendCommand(0x06);
-  EPD_M1_SendData(0x17); // A
-  EPD_M1_SendData(0x17); // B
-  EPD_M1_SendData(0x39); // C
+  EPD_M1_SendData(0x17);  // A
+  EPD_M1_SendData(0x17);  // B
+  EPD_M1_SendData(0x39);  // C
   EPD_M1_SendData(0x17);
   EPD_M2_SendCommand(0x06);
   EPD_M2_SendData(0x17);
@@ -231,33 +230,33 @@ uint8_t EPD_12in48B_Init(void) {
   // resolution setting
   EPD_M1_SendCommand(0x61);
   EPD_M1_SendData(0x02);
-  EPD_M1_SendData(0x88); // source 648
-  EPD_M1_SendData(0x01); // gate 492
+  EPD_M1_SendData(0x88);  // source 648
+  EPD_M1_SendData(0x01);  // gate 492
   EPD_M1_SendData(0xEC);
   EPD_S1_SendCommand(0x61);
   EPD_S1_SendData(0x02);
-  EPD_S1_SendData(0x90); // source 656
-  EPD_S1_SendData(0x01); // gate 492
+  EPD_S1_SendData(0x90);  // source 656
+  EPD_S1_SendData(0x01);  // gate 492
   EPD_S1_SendData(0xEC);
   EPD_M2_SendCommand(0x61);
   EPD_M2_SendData(0x02);
-  EPD_M2_SendData(0x90); // source 656
-  EPD_M2_SendData(0x01); // gate 492
+  EPD_M2_SendData(0x90);  // source 656
+  EPD_M2_SendData(0x01);  // gate 492
   EPD_M2_SendData(0xEC);
   EPD_S2_SendCommand(0x61);
   EPD_S2_SendData(0x02);
-  EPD_S2_SendData(0x88); // source 648
-  EPD_S2_SendData(0x01); // gate 492
+  EPD_S2_SendData(0x88);  // source 648
+  EPD_S2_SendData(0x01);  // gate 492
   EPD_S2_SendData(0xEC);
 
-  EPD_M1S1M2S2_SendCommand(0x15); // DUSPI
+  EPD_M1S1M2S2_SendCommand(0x15);  // DUSPI
   EPD_M1S1M2S2_SendData(0x20);
 
-  EPD_M1S1M2S2_SendCommand(0x50); // Vcom and data interval setting
+  EPD_M1S1M2S2_SendCommand(0x50);  // Vcom and data interval setting
   EPD_M1S1M2S2_SendData(0x11);
   EPD_M1S1M2S2_SendData(0x07);
 
-  EPD_M1S1M2S2_SendCommand(0x60); // TCON
+  EPD_M1S1M2S2_SendCommand(0x60);  // TCON
   EPD_M1S1M2S2_SendData(0x22);
 
   EPD_M1S1M2S2_SendCommand(0xE3);
@@ -347,49 +346,54 @@ void EPD_12in48B_Clear(void) {
 function :	Sends the image buffer in RAM to e-Paper and displays
 parameter:
 ******************************************************************************/
-void EPD_12in48B_cmd1S2(void) { EPD_S2_SendCommand(0x10); }
-void EPD_12in48B_cmd1M2(void) { EPD_M2_SendCommand(0x10); }
-void EPD_12in48B_cmd1M1(void) { EPD_M1_SendCommand(0x10); }
-void EPD_12in48B_cmd1S1(void) { EPD_S1_SendCommand(0x10); }
-void EPD_12in48B_data1S2(uint8_t data) { EPD_S2_SendData(data); }
-void EPD_12in48B_data1M2(uint8_t data) { EPD_M2_SendData(data); }
-void EPD_12in48B_data1M1(uint8_t data) { EPD_M1_SendData(data); }
-void EPD_12in48B_data1S1(uint8_t data) { EPD_S1_SendData(data); }
+void EPD_12in48B_cmd1S2(void) {
+  EPD_S2_SendCommand(0x10);
+}
+void EPD_12in48B_cmd1M2(void) {
+  EPD_M2_SendCommand(0x10);
+}
+void EPD_12in48B_cmd1M1(void) {
+  EPD_M1_SendCommand(0x10);
+}
+void EPD_12in48B_cmd1S1(void) {
+  EPD_S1_SendCommand(0x10);
+}
+void EPD_12in48B_data1S2(uint8_t data) {
+  EPD_S2_SendData(data);
+}
+void EPD_12in48B_data1M2(uint8_t data) {
+  EPD_M2_SendData(data);
+}
+void EPD_12in48B_data1M1(uint8_t data) {
+  EPD_M1_SendData(data);
+}
+void EPD_12in48B_data1S1(uint8_t data) {
+  EPD_S1_SendData(data);
+}
 
-void EPD_12in48B_cmd2S2(void) { EPD_S2_SendCommand(0x13); }
-void EPD_12in48B_cmd2M2(void) { EPD_M2_SendCommand(0x13); }
-void EPD_12in48B_cmd2M1(void) { EPD_M1_SendCommand(0x13); }
-void EPD_12in48B_cmd2S1(void) { EPD_S1_SendCommand(0x13); }
-void EPD_12in48B_data2S2(uint8_t data) { EPD_S2_SendData(~data); }
-void EPD_12in48B_data2M2(uint8_t data) { EPD_M2_SendData(~data); }
-void EPD_12in48B_data2M1(uint8_t data) { EPD_M1_SendData(~data); }
-void EPD_12in48B_data2S1(uint8_t data) { EPD_S1_SendData(~data); }
-
-void EPD_12in48B_partialS2(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
-  // Partial window command
-  EPD_S2_SendCommand(0x90);
-
-  // HRST
-  EPD_S2_SendData(x0 >> 8);
-  EPD_S2_SendData(x0 & ~0b111);
-
-  // HRED
-  EPD_S2_SendData(x1 >> 8);
-  EPD_S2_SendData(x1 | 0b111);
-
-  // VRST
-  EPD_S2_SendData(y0 >> 8);
-  EPD_S2_SendData(y0);
-
-  // VRED
-  EPD_S2_SendData(y1 >> 8);
-  EPD_S2_SendData(y1);
-
-  // PT_SCAN
-  EPD_S2_SendData(0b1);
-
-  // Partial In command
-  EPD_S2_SendCommand(0x91);
+void EPD_12in48B_cmd2S2(void) {
+  EPD_S2_SendCommand(0x13);
+}
+void EPD_12in48B_cmd2M2(void) {
+  EPD_M2_SendCommand(0x13);
+}
+void EPD_12in48B_cmd2M1(void) {
+  EPD_M1_SendCommand(0x13);
+}
+void EPD_12in48B_cmd2S1(void) {
+  EPD_S1_SendCommand(0x13);
+}
+void EPD_12in48B_data2S2(uint8_t data) {
+  EPD_S2_SendData(~data);
+}
+void EPD_12in48B_data2M2(uint8_t data) {
+  EPD_M2_SendData(~data);
+}
+void EPD_12in48B_data2M1(uint8_t data) {
+  EPD_M1_SendData(~data);
+}
+void EPD_12in48B_data2S1(uint8_t data) {
+  EPD_S1_SendData(~data);
 }
 
 /******************************************************************************
@@ -397,20 +401,13 @@ function :	Turn On Display
 parameter:
 ******************************************************************************/
 void EPD_12in48B_TurnOnDisplay(void) {
-  EPD_M1M2_SendCommand(0x04); // power on
+  EPD_M1M2_SendCommand(0x04);  // power on
   _delay_ms(300);
-  EPD_M1S1M2S2_SendCommand(0x12); // Display Refresh
+  EPD_M1S1M2S2_SendCommand(0x12);  // Display Refresh
 
   EPD_M1_ReadBusy();
   EPD_S1_ReadBusy();
   EPD_M2_ReadBusy();
-  EPD_S2_ReadBusy();
-}
-
-void EPD_12in48B_refreshS2(void) {
-  EPD_M1M2_SendCommand(0x04); // power on
-  _delay_ms(300);
-  EPD_S2_SendCommand(0x12); // Display Refresh
   EPD_S2_ReadBusy();
 }
 
@@ -419,10 +416,10 @@ function :	Enter sleep mode
 parameter:
 ******************************************************************************/
 void EPD_12in48B_Sleep(void) {
-  EPD_M1S1M2S2_SendCommand(0X02); // power off
+  EPD_M1S1M2S2_SendCommand(0X02);  // power off
   _delay_ms(300);
 
-  EPD_M1S1M2S2_SendCommand(0X07); // deep sleep
+  EPD_M1S1M2S2_SendCommand(0X07);  // deep sleep
   EPD_M1S1M2S2_SendData(0xA5);
   _delay_ms(300);
 }
@@ -464,22 +461,22 @@ static inline void spi_write(uint8_t data) {
   }
 }
 
-#define SEND_CMD(Reg, CS, DC)                                                  \
-  {                                                                            \
-    gpio_set_level(CS, 0);                                                     \
-    gpio_set_level(DC, 0);                                                     \
-    spi_write(Reg);                                                            \
-    gpio_set_level(CS, 1);                                                     \
-    gpio_set_level(DC, 1);                                                     \
+#define SEND_CMD(Reg, CS, DC) \
+  {                           \
+    gpio_set_level(CS, 0);    \
+    gpio_set_level(DC, 0);    \
+    spi_write(Reg);           \
+    gpio_set_level(CS, 1);    \
+    gpio_set_level(DC, 1);    \
   }
 
-#define SEND_DATA(Data, CS, DC)                                                \
-  {                                                                            \
-    gpio_set_level(CS, 0);                                                     \
-    gpio_set_level(DC, 1);                                                     \
-    spi_write(Data);                                                           \
-    gpio_set_level(CS, 1);                                                     \
-    gpio_set_level(DC, 1);                                                     \
+#define SEND_DATA(Data, CS, DC) \
+  {                             \
+    gpio_set_level(CS, 0);      \
+    gpio_set_level(DC, 1);      \
+    spi_write(Data);            \
+    gpio_set_level(CS, 1);      \
+    gpio_set_level(DC, 1);      \
   }
 
 void EPD_M1_SendCommand(uint8_t Reg) {
@@ -567,24 +564,28 @@ function :	Wait until the busy_pin goes LOW(M1\M2\S1\S2)
 parameter:
 ******************************************************************************/
 static void EPD_M1_ReadBusy(void) {
+  printf("Waiting for M1...\n");
   do {
     EPD_M1_SendCommand(0x71);
   } while (!gpio_get_level(EPD_M1_BUSY_PIN));
   _delay_ms(200);
 }
 static void EPD_M2_ReadBusy(void) {
+  printf("Waiting for M2...\n");
   do {
     EPD_M2_SendCommand(0x71);
   } while (!gpio_get_level(EPD_M2_BUSY_PIN));
   _delay_ms(200);
 }
 static void EPD_S1_ReadBusy(void) {
+  printf("Waiting for S1...\n");
   do {
     EPD_S1_SendCommand(0x71);
   } while (!gpio_get_level(EPD_S1_BUSY_PIN));
   _delay_ms(200);
 }
 static void EPD_S2_ReadBusy(void) {
+  printf("Waiting for S2...\n");
   do {
     EPD_S2_SendCommand(0x71);
   } while (!gpio_get_level(EPD_S2_BUSY_PIN));
@@ -662,33 +663,33 @@ parameter:
 static void EPD_SetLut(void) {
   uint16_t count;
 
-  EPD_M1S1M2S2_SendCommand(0x20); // vcom
+  EPD_M1S1M2S2_SendCommand(0x20);  // vcom
   for (count = 0; count < 60; count++) {
     EPD_M1S1M2S2_SendData(lut_vcom1[count]);
   }
 
-  EPD_M1S1M2S2_SendCommand(0x21); // red not use
+  EPD_M1S1M2S2_SendCommand(0x21);  // red not use
   for (count = 0; count < 60; count++) {
     EPD_M1S1M2S2_SendData(lut_ww1[count]);
   }
 
-  EPD_M1S1M2S2_SendCommand(0x22); // bw r
+  EPD_M1S1M2S2_SendCommand(0x22);  // bw r
   for (count = 0; count < 60; count++) {
-    EPD_M1S1M2S2_SendData(lut_bw1[count]); // bw=r
+    EPD_M1S1M2S2_SendData(lut_bw1[count]);  // bw=r
   }
 
-  EPD_M1S1M2S2_SendCommand(0x23); // wb w
+  EPD_M1S1M2S2_SendCommand(0x23);  // wb w
   for (count = 0; count < 60; count++) {
-    EPD_M1S1M2S2_SendData(lut_wb1[count]); // wb=w
+    EPD_M1S1M2S2_SendData(lut_wb1[count]);  // wb=w
   }
 
-  EPD_M1S1M2S2_SendCommand(0x24); // bb b
+  EPD_M1S1M2S2_SendCommand(0x24);  // bb b
   for (count = 0; count < 60; count++) {
-    EPD_M1S1M2S2_SendData(lut_bb1[count]); // bb=b
+    EPD_M1S1M2S2_SendData(lut_bb1[count]);  // bb=b
   }
 
-  EPD_M1S1M2S2_SendCommand(0x25); // bb b
+  EPD_M1S1M2S2_SendCommand(0x25);  // bb b
   for (count = 0; count < 60; count++) {
-    EPD_M1S1M2S2_SendData(lut_ww1[count]); // bb=b
+    EPD_M1S1M2S2_SendData(lut_ww1[count]);  // bb=b
   }
 }

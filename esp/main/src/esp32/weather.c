@@ -176,22 +176,22 @@ bool download_weather_data(struct ArtData *data) {
       const cJSON *json_rain = cJSON_GetObjectItem(json_item, "rain");
       const cJSON *json_rain_3h = cJSON_GetObjectItem(json_rain, "3h");
       double rain = cJSON_GetNumberValue(json_rain_3h);
-      data->rain_density = rain * 8.0;
+      data->rain_density = rain > 0 ? rain * 8.0 : 0;
     }
     {
       const cJSON *json_snow = cJSON_GetObjectItem(json_item, "snow");
       const cJSON *json_snow_3h = cJSON_GetObjectItem(json_snow, "3h");
       double snow = cJSON_GetNumberValue(json_snow_3h);
-      data->snow_density = snow * 8.0;
+      data->snow_density = snow > 0 ? snow * 8.0 : 0;
     }
     {
       const cJSON *json_clouds = cJSON_GetObjectItem(json_item, "clouds");
       const cJSON *json_clouds_all = cJSON_GetObjectItem(json_clouds, "all");
       double clouds = cJSON_GetNumberValue(json_clouds_all);
-      data->clouds_count = clouds / 4.0;
+      data->clouds_count = clouds > 0 ? clouds / 4.0 : 0;
     }
-    printf("Rain density: %d; clouds: %d\n", //
-           data->rain_density, data->clouds_count);
+    printf("Rain density: %d; Snow density: %d; clouds: %d\n", //
+           data->rain_density, data->snow_density, data->clouds_count);
   }
 
   cJSON_Delete(json);
