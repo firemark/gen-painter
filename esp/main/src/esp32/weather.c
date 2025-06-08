@@ -127,6 +127,9 @@ bool download_weather_data(struct ArtData *data) {
     return false;
   }
 
+  char found_rain = 0;
+  char found_snow = 0;
+
   const cJSON *json_list = cJSON_GetObjectItem(json, "list");
   for (int i = 0; i < 4; i++) {
     const cJSON *json_item = cJSON_GetArrayItem(json_list, i);
@@ -164,26 +167,56 @@ bool download_weather_data(struct ArtData *data) {
       forecast->minute = timeinfo.tm_min;
     }
 
+    if (!found_rain) {
+      const cJSON *json_rain = cJSON_GetObjectItem(json_item, "rain");
+      const cJSON *json_rain_item;
+      json_rain_item = cJSON_GetObjectItem(json_rain, "1h");
+      if (json_rain_item) {
+        found_rain = 1;
+        double rain = cJSON_GetNumberValue(json_rain_item);
+        data->rain_density = rain > 0 ? rain * 80.0 : 0;
+      }
+      json_rain_item = cJSON_GetObjectItem(json_rain, "3h");
+      if (json_rain_item) {
+        found_rain = 1;
+        double rain = cJSON_GetNumberValue(json_rain_item);
+        data->rain_density = rain > 0 ? rain / 3.0 * 80.0 : 0;
+      }
+    }
+
+    if (!found_snow) {
+      const cJSON *json_snow = cJSON_GetObjectItem(json_item, "snow");
+      const cJSON *json_snow_item;
+      json_snow_item = cJSON_GetObjectItem(json_snow, "1h");
+      if (json_snow_item) {
+        found_snow = 1;
+        double snow = cJSON_GetNumberValue(json_snow_item);
+        data->snow_density = snow > 0 ? snow * 8.0 : 0;
+      }
+      json_snow_item = cJSON_GetObjectItem(json_snow, "3h");
+      if (json_snow_item) {
+        found_snow = 1;
+        double snow = cJSON_GetNumberValue(json_snow_item);
+        data->snow_density = snow > 0 ? snow / 3.0 * 8.0 : 0;
+      }
+    }
+
     printf("Forecast %d id: %3d, timestamp: %lld time: %02d:%02d; temperature: "
            "%2d\n",
            i, weather_id, dt, forecast->hour, forecast->minute,
            forecast->temperature);
   }
 
+  if (!found_rain) {
+     data->rain_density = 0;
+  }
+
+  if (!found_snow) {
+     data->snow_density = 0;
+  }
+
   {
     const cJSON *json_item = cJSON_GetArrayItem(json_list, 0);
-    {
-      const cJSON *json_rain = cJSON_GetObjectItem(json_item, "rain");
-      const cJSON *json_rain_3h = cJSON_GetObjectItem(json_rain, "3h");
-      double rain = cJSON_GetNumberValue(json_rain_3h);
-      data->rain_density = rain > 0 ? rain * 8.0 : 0;
-    }
-    {
-      const cJSON *json_snow = cJSON_GetObjectItem(json_item, "snow");
-      const cJSON *json_snow_3h = cJSON_GetObjectItem(json_snow, "3h");
-      double snow = cJSON_GetNumberValue(json_snow_3h);
-      data->snow_density = snow > 0 ? snow * 8.0 : 0;
-    }
     {
       const cJSON *json_clouds = cJSON_GetObjectItem(json_item, "clouds");
       const cJSON *json_clouds_all = cJSON_GetObjectItem(json_clouds, "all");
