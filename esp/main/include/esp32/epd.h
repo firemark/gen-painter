@@ -31,24 +31,24 @@
 #define _EPD_12IN48B_H_
 #include <stdint.h>
 
-#define EPD_SCK_PIN  14
-#define EPD_MOSI_PIN 13
+#define EPD_SCK_PIN  4
+#define EPD_MOSI_PIN 18
 
-#define EPD_M1_CS_PIN 23
-#define EPD_S1_CS_PIN 22
-#define EPD_M2_CS_PIN 21
-#define EPD_S2_CS_PIN 19
+#define EPD_M1_CS_PIN 8
+#define EPD_S1_CS_PIN 9
+#define EPD_M2_CS_PIN 5
+#define EPD_S2_CS_PIN 6
 
-#define EPD_M1S1_DC_PIN  25
-#define EPD_M2S2_DC_PIN  27
+#define EPD_M1S1_DC_PIN  10
+#define EPD_M2S2_DC_PIN  7
 
-#define EPD_M1S1_RST_PIN 33
-#define EPD_M2S2_RST_PIN 26
+#define EPD_M1S1_RST_PIN 11
+#define EPD_M2S2_RST_PIN 15
 
-#define EPD_M1_BUSY_PIN  35
-#define EPD_S1_BUSY_PIN  32
-#define EPD_M2_BUSY_PIN  18
-#define EPD_S2_BUSY_PIN  34
+#define EPD_M1_BUSY_PIN  12
+#define EPD_S1_BUSY_PIN  13
+#define EPD_M2_BUSY_PIN  16
+#define EPD_S2_BUSY_PIN  17
 
 // Display resolution
 #define EPD_12in48B_MAX_WIDTH 1304

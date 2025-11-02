@@ -7,6 +7,7 @@
 #include "esp32/epd.h"
 
 #include "esp_heap_caps.h"
+#include "esp_task_wdt.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -16,7 +17,7 @@ static void draw_M1(struct Image *image);
 static void draw_S2(struct Image *image);
 static void draw_M2(struct Image *image);
 
-static void _yield(void) { vTaskDelay(1); }
+static void _yield(void) { esp_task_wdt_reset(); }
 
 static void _art_draw(struct Image *image) {
   art_draw(image);
@@ -28,7 +29,7 @@ void draw_to_screen(void) {
   struct Image *image = image_create();
   if (!image) {
     printf("Not enough memory to draw! available memory: %u; required: %u\n",
-           heap_caps_get_free_size(MALLOC_CAP_DEFAULT), sizeof(struct Image));
+           heap_caps_get_free_size(MALLOC_CAP_DEFAULT), sizeof(struct Image) + IMAGE_SIZE);
     return;
   }
 
